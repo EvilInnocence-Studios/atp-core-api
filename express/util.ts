@@ -2,8 +2,8 @@ import { Response } from "express";
 import { Error, getErrorMessage, isError } from "serverless-api-boilerplate";
 import { at, map, pipe, prop } from "ts-functional";
 import { Func } from "ts-functional/dist/types";
-import { Params, Query } from "../../../lib/common/api/types";
 import { database } from "../database";
+import {Params, Query} from "../../core-shared/express/types";
 
 const db = database();
 

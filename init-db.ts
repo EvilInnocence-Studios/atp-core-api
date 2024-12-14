@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
-import { IInitializer, IMigration } from '../src/core/lib/database.d';
+import { IInitializer, IMigration } from './database.d';
 
 // Helper function to dynamically load init modules
 const loadInitModules = (srcPath:string):IMigration[] => {
