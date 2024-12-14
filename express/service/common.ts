@@ -1,11 +1,10 @@
 import { map } from "ts-functional";
 import { Func } from "ts-functional/dist/types";
+import { NewObj } from "../../../atp-core-shared/express/types";
 import { database } from "../../database";
 import { create, loadBy, loadById, remove, search, transform, update } from "../util";
 
 const db = database();
-
-type NewObj<T extends {id:number}> = Omit<T, "id">;
 
 export const basicCrudService = <T extends {id: number}, R = T>(table:string, nameField:string = "name", afterLoad:Func<T, R> = transform) => ({
     create:     create<T, NewObj<T>, R>(table, nameField, afterLoad),
