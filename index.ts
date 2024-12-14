@@ -40,7 +40,7 @@ function registerRoutes(config: IApiConfig, basePath = "") {
 
 // Function to load all top-level endpoint configs
 const loadAllApiConfigs = async (): Promise<IApiConfig[]> => {
-    const srcPath = path.resolve(__dirname);
+    const srcPath = path.resolve(__dirname, "..");
     const apiConfigs: IApiConfig[] = [];
 
     const directories = fs.readdirSync(srcPath, { withFileTypes: true });

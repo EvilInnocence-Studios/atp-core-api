@@ -1,6 +1,6 @@
 import { map } from "ts-functional";
 import { Func } from "ts-functional/dist/types";
-import { NewObj } from "../../../atp-core-shared/express/types";
+import { NewObj } from "../../../core-shared/express/types";
 import { database } from "../../database";
 import { create, loadBy, loadById, remove, search, transform, update } from "../util";
 
