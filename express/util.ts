@@ -73,11 +73,10 @@ export const transform = <T, R>(obj:T) => obj as unknown as R;
 
 export const create = <T, NewT, R = T>(table:string, nameField:string, afterLoad:Func<T, R> = transform) => async (newObj: NewT): Promise<R> => {
     try {
-        const [id] = await db
-            .insert(newObj)
-            .returning('id')
+        const [insertedObj] = await db
+            .insert(newObj, "*")
             .into(table);
-        return await loadById(table, afterLoad)(id);
+        return insertedObj;
     } catch (e: any) {
         if (e.code === '23505') { // Assuming PostgreSQL unique violation error code
             const existingRecord = await db

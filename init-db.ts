@@ -29,7 +29,7 @@ const loadInitModules = (srcPath:string):IMigration[] => {
     return initModules;
 };
 
-const srcPath = path.resolve(__dirname, '../src');
+const srcPath = path.resolve(__dirname, '..');
 const initModules = loadInitModules(srcPath);
 
 // Local init endpoint
