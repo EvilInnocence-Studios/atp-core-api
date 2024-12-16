@@ -1,9 +1,8 @@
 import { Response } from "express";
-import { Error, getErrorMessage, isError } from "serverless-api-boilerplate";
 import { at, map, pipe, prop } from "ts-functional";
 import { Func } from "ts-functional/dist/types";
+import { Params, Query } from "../../core-shared/express/types";
 import { database } from "../database";
-import {Params, Query} from "../../core-shared/express/types";
 
 const db = database();
 
@@ -30,6 +29,15 @@ export const addJson = (response:Response) => {
     response.append('Content-Type', 'application/json');
 };
 
+interface IError {
+    statusCode: number;
+    message: string;
+}
+
+const isError = (e:any):e is IError => e.message && e.statusCode;
+export const error = (statusCode:number, message:string):IError => ({statusCode, message});
+export const error403 = error(403, "Permission denied");
+
 // More fully type this
 export const catchErrors = async <T>(response:Response, f:() => Promise<T>) => {
     f()
@@ -41,17 +49,18 @@ export const catchErrors = async <T>(response:Response, f:() => Promise<T>) => {
         })
             
         .catch(e => {
-            const err:Error = isError(e) ? e : {
+            console.log(e);
+            const err:IError = isError(e) ? e : {
               message: `Something bad happened. I don't know what else to tell you. :( -- ${JSON.stringify(e)}`,
               statusCode: 500,
             };
             
-            response.statusCode = 500;
+            response.statusCode = e.statusCode || 500;
             // addCors(response);
             addJson(response);
             response.send(JSON.stringify(process.env.ENV === "local"
-                ? {message: getErrorMessage(e), details: e, env: process.env}
-                : {message: getErrorMessage(e)}
+                ? {message: e.message, details: e, env: process.env}
+                : {message: e.message}
             ));
         });
 };
