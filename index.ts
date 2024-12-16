@@ -11,7 +11,7 @@ app.use(express.json());
 // Global CORS Middleware
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*'); // Replace '*' with specific allowed origin(s) in production
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS'); // Allowed methods
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS'); // Allowed methods
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // Allowed headers
     if (req.method === 'OPTIONS') {
         res.sendStatus(204); // Short-circuit OPTIONS requests
@@ -26,7 +26,7 @@ function registerRoutes(config: IApiConfig, basePath = "") {
         const fullPath = `${basePath}/${route}`.replace(/\\/g, "/");
 
         Object.entries(methodsOrSubRoutes).forEach(([key, handlerOrSubConfig]) => {
-            if (key === "GET" || key === "POST" || key === "PUT" || key === "DELETE") {
+            if (["GET", "POST", "PUT", "PATCH", "DELETE"].includes(key.toUpperCase())) {
                 const method = key.toLowerCase();
                 console.log(`  ${key} ${fullPath}`);
                 (app as any)[method](fullPath, handlerOrSubConfig as express.RequestHandler);
