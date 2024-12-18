@@ -6,12 +6,22 @@ import { create, loadBy, loadById, remove, search, transform, update } from "../
 
 const db = database();
 
-export const basicCrudService = <T extends {id: number}, R = T>(table:string, nameField:string = "name", afterLoad:Func<T, R> = transform) => ({
-    create:     create<T, NewObj<T>, R>(table, nameField, afterLoad),
-    search:     search<T, R>(table, nameField, afterLoad),
-    loadById:   loadById<T, R>(table, afterLoad),
-    loadByName: loadBy<T, R>(nameField, table, afterLoad),
-    update:     update<T, R>(table),
+export const basicCrudService = <
+    Entity extends {id: number},
+    NewEntity = NewObj<Entity>,
+    EntityUpdate extends {id: number} = (Partial<Entity> & {id: number}),
+    ReturnedEntity extends {id:number} = Entity,
+>(
+    table:string, nameField:string = "name",
+    afterLoad:Func<Entity, ReturnedEntity> = transform,
+    beforeCreate: Func<NewEntity, NewObj<Entity>> = transform,
+    beforeUpdate:Func<EntityUpdate, Partial<Entity>> = transform,
+) => ({
+    create:     create<Entity, NewEntity, ReturnedEntity>(table, nameField, beforeCreate, afterLoad),
+    search:     search<Entity, ReturnedEntity>(table, nameField, afterLoad),
+    loadById:   loadById<Entity, ReturnedEntity>(table, afterLoad),
+    loadByName: loadBy<Entity, ReturnedEntity>(nameField, table, afterLoad),
+    update:     update<Entity, EntityUpdate, ReturnedEntity>(table, beforeUpdate, afterLoad),
     remove:     remove(table),
 });
 

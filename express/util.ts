@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { at, map, pipe, prop } from "ts-functional";
 import { Func } from "ts-functional/dist/types";
-import { Params, Query } from "../../core-shared/express/types";
+import { NewObj, Params, Query } from "../../core-shared/express/types";
 import { database } from "../database";
 
 const db = database();
@@ -80,10 +80,18 @@ export const parseNestedQuery = (query:any) => Object.keys(query)
 
 export const transform = <T, R>(obj:T) => obj as unknown as R;
 
-export const create = <T, NewT, R = T>(table:string, nameField:string, afterLoad:Func<T, R> = transform) => async (newObj: NewT): Promise<R> => {
+export const create = <
+    Entity extends {id: number},
+    NewEntity = NewObj<Entity>,
+    ReturnedEntity = Entity,
+>(
+    table:string, nameField:string,
+    beforeCreate:Func<NewEntity, NewObj<Entity>> = transform,
+    afterLoad:Func<Entity, ReturnedEntity> = transform
+) => async (newObj: NewEntity): Promise<ReturnedEntity> => {
     try {
         const [insertedObj] = await db
-            .insert(newObj, "*")
+            .insert(beforeCreate(newObj), "*")
             .into(table);
         return insertedObj;
     } catch (e: any) {
@@ -124,10 +132,18 @@ export const loadBy = <T, R = T>(field:string, table:string, afterLoad:Func<T, R
     .first()
     .then(afterLoad);
 
-export const update = <T, R = T>(table:string) => (id:number, updated:Partial<T>):Promise<R> => db
-    .update(updated)
+export const update = <
+    Entity extends {id: number},
+    EntityUpdate extends {id: number} = (Partial<Entity> & {id: number}),
+    ReturnedEntity = Entity,
+>(
+    table:string,
+    beforeUpdate:Func<EntityUpdate, Partial<Entity>> = transform,
+    afterLoad: Func<Entity, ReturnedEntity> = transform,
+) => (id:number, updated:EntityUpdate):Promise<ReturnedEntity> => db
+    .update(beforeUpdate(updated))
     .into(table)
     .where({ id })
-    .then(() => loadById<T, R>(table)(id));
+    .then(() => loadById<Entity, ReturnedEntity>(table, afterLoad)(id));
 
 export const remove = (table:string) => (id:number):Promise<any> => db.delete().from(table).where({ id });
