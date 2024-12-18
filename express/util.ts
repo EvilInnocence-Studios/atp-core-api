@@ -108,12 +108,12 @@ export const create = <
     }
 };
 
-export const search = <T, R = T>(table:string, searchField:string = "name", afterLoad:Func<T, R> = transform) =>
-    ({q, perPage, offset}: Query = {} as Query):Promise<R[]> => db
+export const search = <T, R = T>(table:string, orderField: string, afterLoad:Func<T, R> = transform) =>
+    ({offset, perPage, ...query}: Query = {} as Query):Promise<R[]> => db
         .select("*")
         .from(table)
-        .where(searchField, "like", `${q || ""}%`)
-        .orderBy(searchField)
+        .where(query)
+        .orderBy(orderField)
         .offset(offset || 0)
         .limit(perPage || 999999)
         .then(map(afterLoad));
