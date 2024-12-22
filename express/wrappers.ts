@@ -48,3 +48,11 @@ export const put = <T>(f:PutFunction<T>):RequestHandler => (request:Request, res
     ));
   };
   
+  export const upload = (f:PostFunction<any, any>) => (request:Request, response:Response) => {
+    catchErrors<any>(response, () => f(
+      request.params,
+      request.files,
+      request.headers,
+      process.env,
+    ));
+  }

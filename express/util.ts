@@ -11,6 +11,7 @@ export const getParam       = <T>(name:string) => (args:any[]) => getParams(args
 
 export const getBody        = <T>(args:any[]):T => args[1] as T;
 export const getBodyParam   = <T>(name:string) => (args:any[]) => getBody<any>(args)[name] as T;
+export const getFile        = pipe(getBody<{file:any}>, prop<any, any>("file"));
 
 export const getQuery       = (args:any[]):Query => args[1] as Query;
 export const getQueryParam  = <T>(name:string) => (args:any[]) => getQuery(args)[name] as T;

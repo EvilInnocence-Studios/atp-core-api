@@ -4,11 +4,15 @@ import express, { Request, Response, NextFunction } from "express";
 import path from "path";
 import fs from "fs";
 import {IApiConfig} from "./endpoints";
+import fileUpload from 'express-fileupload';
 
 const app = express();
 
 // Middleware for parsing JSON
 app.use(express.json());
+
+// Middleware for uploading files
+app.use(fileUpload());
 
 // Global CORS Middleware
 app.use((req, res, next) => {
