@@ -38,6 +38,7 @@ interface IError {
 const isError = (e:any):e is IError => e.message && e.statusCode;
 export const error = (statusCode:number, message:string):IError => ({statusCode, message});
 export const error403 = error(403, "Permission denied");
+export const error500 = (message:string = "Something bad happened. I don't know what else to tell you. :("):IError => error(500, message);
 
 // More fully type this
 export const catchErrors = async <T>(response:Response, f:() => Promise<T>) => {
