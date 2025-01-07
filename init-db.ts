@@ -32,13 +32,24 @@ const loadInitModules = (srcPath:string):IMigration[] => {
 const srcPath = path.resolve(__dirname, '..');
 const initModules = loadInitModules(srcPath);
 
-// Local init endpoint
+// Initialize all database tables
 const initPromises = initModules.map((init:IMigration) => 
     init.down()
         .then(init.up)
 );
 
 Promise.all(initPromises)
+    // Run the initData function for each initializer in priority order
+    // Each initData initializer should wait for the previous one to be done
+    .then(() => {
+        console.log("Running data initializers");
+        return initModules
+            .sort((a, b) => a.priority - b.priority)
+            .reduce(
+                (prevInit, curInit) => prevInit.then(curInit.initData), 
+                Promise.resolve()
+            );
+    })
     .then(() => console.log("Database initialized"))
     .catch((err) => {console.error(err);});
 

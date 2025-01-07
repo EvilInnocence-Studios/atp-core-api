@@ -1,6 +1,8 @@
 export declare interface IMigration {
     down: () => Promise<any>;
     up: () => Promise<any>;
+    priority: number;
+    initData: () => Promise<any>;
 }
 
 export declare interface IInitializer {

@@ -1,4 +1,5 @@
 import "dotenv/config";
+import 'esm-hook';
 
 import express, { Request, Response, NextFunction } from "express";
 import path from "path";

@@ -21,6 +21,7 @@ export const basicCrudService = <
     search:     search<Entity, ReturnedEntity>(table, nameField, afterLoad),
     loadById:   loadById<Entity, ReturnedEntity>(table, afterLoad),
     loadByName: loadBy<Entity, ReturnedEntity>(nameField, table, afterLoad),
+    loadBy:     (field:string) => loadBy<Entity, ReturnedEntity>(field, table, afterLoad),
     update:     update<Entity, EntityUpdate, ReturnedEntity>(table, beforeUpdate, afterLoad),
     remove:     remove(table),
 });
