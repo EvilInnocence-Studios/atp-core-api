@@ -16,6 +16,7 @@ export const basicCrudService = <
     afterLoad:Func<Entity, ReturnedEntity> = transform,
     beforeCreate: Func<NewEntity, NewObj<Entity>> = transform,
     beforeUpdate:Func<EntityUpdate, Partial<Entity>> = transform,
+    afterCreate: Func<Entity, void> = () => {},
 ) => ({
     create:     create<Entity, NewEntity, ReturnedEntity>(table, nameField, beforeCreate, afterLoad),
     search:     search<Entity, ReturnedEntity>(table, nameField, afterLoad),

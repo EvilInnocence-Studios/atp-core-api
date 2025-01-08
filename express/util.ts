@@ -89,13 +89,15 @@ export const create = <
 >(
     table:string, nameField:string,
     beforeCreate:Func<NewEntity, NewObj<Entity>> = transform,
-    afterLoad:Func<Entity, ReturnedEntity> = transform
+    afterLoad:Func<Entity, ReturnedEntity> = transform,
+    afterCreate:Func<Entity, void> = () => {},
 ) => async (newObj: NewEntity): Promise<ReturnedEntity> => {
     try {
         const [insertedObj] = await db
             .insert(beforeCreate(newObj), "*")
             .into(table);
-        return insertedObj;
+        afterCreate(insertedObj);
+        return afterLoad(insertedObj);
     } catch (e: any) {
         if (e.code === '23505') { // Assuming PostgreSQL unique violation error code
             const existingRecord = await db

@@ -1,8 +1,10 @@
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import { getAppConfig } from "../../config";
 
+const region = getAppConfig().awsRegion;
+
 export const sendEmail = async (subject: string, body: string, to: string[]) => {
-    const client = new SESClient({region: "us-east-1"});
+    const client = new SESClient({region });
     const command = new SendEmailCommand({
         Destination: {
             ToAddresses: to
