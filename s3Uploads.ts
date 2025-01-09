@@ -10,17 +10,16 @@ export declare interface IUploadOptions {
 const Bucket = getAppConfig().mediaBucket;
 const region = getAppConfig().awsRegion;
 
-export const uploadMedia = async (urlBase:string, file: Express.Multer.File, options?:IUploadOptions) => {
-    const { originalname, buffer } = file;
-
+export const uploadMedia = async (urlBase:string, file: any, options?:IUploadOptions) => {
     const client = new S3Client({ region });
-    const key = `${urlBase}/${originalname}`;
+    const key = `${urlBase}/${file.name}`;
 
     // Determine if file already exists
     if(options?.failOnExist) {
         const command = new HeadObjectCommand({ Bucket, Key: key });
         try {
-            await client.send(command);
+            const result = await client.send(command);
+            console.log(result);
             throw new Error("File already exists");
         } catch(e:any) {
             if(e.name !== "NotFound") {
@@ -33,7 +32,7 @@ export const uploadMedia = async (urlBase:string, file: Express.Multer.File, opt
     const command = new PutObjectCommand({
         Bucket,
         Key: key,
-        Body: buffer,
+        Body: file.data,
         ACL: "public-read",
     });
     await client.send(command);
