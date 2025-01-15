@@ -1,6 +1,6 @@
 import { Response } from "express";
 import { at, map, pipe, prop } from "ts-functional";
-import { Func } from "ts-functional/dist/types";
+import { Func, Index } from "ts-functional/dist/types";
 import { NewObj, Params, Query } from "../../core-shared/express/types";
 import { database } from "../database";
 
@@ -152,3 +152,11 @@ export const update = <
     .then(() => loadById<Entity, ReturnedEntity>(table, afterLoad)(id));
 
 export const remove = (table:string) => (id:number):Promise<any> => db.delete().from(table).where({ id });
+
+export const mapKeys = (f:Func<string, string>) => (obj:Index<any>):Index<any> => Object.keys(obj).reduce(
+    (all:Index<any>, key:string) => {
+        all[f(key)] = obj[key];
+        return all;
+    },
+    {}
+);

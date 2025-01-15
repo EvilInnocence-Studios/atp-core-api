@@ -6,6 +6,7 @@ import path from "path";
 import fs from "fs";
 import {IApiConfig} from "./endpoints";
 import fileUpload from 'express-fileupload';
+import {types} from 'pg';
 
 const app = express();
 
@@ -25,6 +26,11 @@ app.use((req, res, next) => {
         return;
     }
     next();
+});
+
+// Make sure decimal columns are parsed as floats
+types.setTypeParser(1700, function(val) {
+    return parseFloat(val);
 });
 
 // Recursive function to register routes
