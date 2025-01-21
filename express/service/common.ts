@@ -9,7 +9,7 @@ const db = database();
 export const basicCrudService = <
     Entity extends {id: number},
     NewEntity = NewObj<Entity>,
-    EntityUpdate extends {id: number} = (Partial<Entity> & {id: number}),
+    EntityUpdate = Partial<Entity>,
     ReturnedEntity extends {id:number} = Entity,
 >(
     table:string, nameField:string = "name",

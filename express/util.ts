@@ -1,7 +1,7 @@
 import { Response } from "express";
-import { at, map, pipe, prop } from "ts-functional";
+import { at, map, objFilter, pipe, prop, split } from "ts-functional";
 import { Func, Index } from "ts-functional/dist/types";
-import { NewObj, Params, Query } from "../../core-shared/express/types";
+import { NewObj, Params, Query, QueryArrayValue, QuerySingleValue, QueryValue } from "../../core-shared/express/types";
 import { database } from "../database";
 
 const db = database();
@@ -20,6 +20,7 @@ export const getHeaders     = (args:any[]):Headers => args[2] as Headers;
 export const getHeader      = (name:string) => (args:any[]) => (getHeaders(args) as any)[name] as string;
 export const getEnv         = at<NodeJS.ProcessEnv>(3);
 export const getEnvVar      = (name:string) => pipe(getEnv, prop<any, any>(name));
+export const getLoginToken  = pipe(getHeader('authorization'), split(" "), at(1));
 
 export const addCors = (response:Response) => {
     response.append('Access-Control-Allow-Origin', "*");
@@ -115,14 +116,29 @@ export const create = <
 };
 
 export const search = <T, R = T>(table:string, orderField: string, afterLoad:Func<T, R> = transform) =>
-    ({offset, perPage, ...query}: Query = {} as Query):Promise<R[]> => db
-        .select("*")
-        .from(table)
-        .where(query)
-        .orderBy(orderField)
-        .offset(offset || 0)
-        .limit(perPage || 999999)
-        .then(map(afterLoad));
+    ({offset, perPage, ...query}: Query = {} as Query):Promise<R[]> => {
+        const whereIn:Index<QueryArrayValue> = objFilter(
+            (value:QueryValue, key:string) => typeof value === 'object'
+        )(query) as Index<QueryArrayValue>;
+
+        const where:Index<QuerySingleValue> = objFilter(
+            (value:QueryValue) => !(typeof value === 'object')
+        )(query) as Index<QuerySingleValue>;
+
+        const stmt = db
+            .select("*")
+            .from(table)
+            .where(where);
+            
+        Object.keys(whereIn).forEach(key => {
+            stmt.whereIn(key, whereIn[key]);
+        });
+
+        return stmt.orderBy(orderField)
+            .offset(offset || 0)
+            .limit(perPage || 999999)
+            .then(map(afterLoad));
+    }
 
 export const loadById = <T, R = T>(table:string, afterLoad:Func<T, R> = transform) => (id:number):Promise<R> => db
     .select("*")
@@ -140,7 +156,7 @@ export const loadBy = <T, R = T>(field:string, table:string, afterLoad:Func<T, R
 
 export const update = <
     Entity extends {id: number},
-    EntityUpdate extends {id: number} = (Partial<Entity> & {id: number}),
+    EntityUpdate = Partial<Entity>,
     ReturnedEntity = Entity,
 >(
     table:string,
