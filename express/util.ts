@@ -147,7 +147,7 @@ export const loadById = <T, R = T>(table:string, afterLoad:Func<T, R> = transfor
     .first()
     .then(afterLoad);
 
-export const loadBy = <T, R = T>(field:string, table:string, afterLoad:Func<T, R> = transform) => (value:string):Promise<R> => db
+export const loadBy = <T, R = T>(field:string, table:string, afterLoad:Func<T, R> = transform) => (value:any):Promise<R> => db
     .select("*")
     .from(table)
     .where({ [field]:value })
