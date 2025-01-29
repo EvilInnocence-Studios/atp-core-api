@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { at, map, objFilter, pipe, prop, split } from "ts-functional";
+import { at, defaultValue, map, objFilter, pipe, prop, split } from "ts-functional";
 import { Func, Index } from "ts-functional/dist/types";
 import { NewObj, Params, Query, QueryArrayValue, QuerySingleValue, QueryValue } from "../../core-shared/express/types";
 import { database } from "../database";
@@ -17,10 +17,10 @@ export const getQuery       = (args:any[]):Query => args[1] as Query;
 export const getQueryParam  = <T>(name:string) => (args:any[]) => getQuery(args)[name] as T;
 
 export const getHeaders     = (args:any[]):Headers => args[2] as Headers;
-export const getHeader      = (name:string) => (args:any[]) => (getHeaders(args) as any)[name] as string;
+export const getHeader      = (name:string) => (args:any[]):string => (getHeaders(args) as any)[name];
 export const getEnv         = at<NodeJS.ProcessEnv>(3);
 export const getEnvVar      = (name:string) => pipe(getEnv, prop<any, any>(name));
-export const getLoginToken  = pipe(getHeader('authorization'), split(" "), at(1));
+export const getLoginToken  = pipe(getHeader('authorization'), defaultValue(""), split(" "), at(1));
 
 export const addCors = (response:Response) => {
     response.append('Access-Control-Allow-Origin', "*");

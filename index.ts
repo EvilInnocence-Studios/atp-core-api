@@ -1,12 +1,12 @@
 import "dotenv/config";
 import 'esm-hook';
 
-import express, { Request, Response, NextFunction } from "express";
-import path from "path";
-import fs from "fs";
-import {IApiConfig} from "./endpoints";
+import express, { NextFunction, Request, Response } from "express";
 import fileUpload from 'express-fileupload';
-import {types} from 'pg';
+import { types } from 'pg';
+import { apiConfigs } from "../../apiConfig";
+import { IApiConfig } from "./endpoints";
+import serverless from "serverless-http";
 
 const app = express();
 
@@ -17,16 +17,18 @@ app.use(express.json());
 app.use(fileUpload());
 
 // Global CORS Middleware
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*'); // Replace '*' with specific allowed origin(s) in production
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS'); // Allowed methods
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // Allowed headers
-    if (req.method === 'OPTIONS') {
-        res.sendStatus(204); // Short-circuit OPTIONS requests
-        return;
-    }
-    next();
-});
+if(process.env.ENV === 'local') {
+    app.use((req, res, next) => {
+        res.header('Access-Control-Allow-Origin', '*'); // Replace '*' with specific allowed origin(s) in production
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS'); // Allowed methods
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // Allowed headers
+        if (req.method === 'OPTIONS') {
+            res.sendStatus(204); // Short-circuit OPTIONS requests
+            return;
+        }
+        next();
+    });
+}
 
 // Make sure decimal columns are parsed as floats
 types.setTypeParser(1700, function(val) {
@@ -51,56 +53,14 @@ function registerRoutes(config: IApiConfig, basePath = "") {
     });
 }
 
-// Function to load all top-level endpoint configs
-const loadAllApiConfigs = async (): Promise<IApiConfig[]> => {
-    const srcPath = path.resolve(__dirname, "..");
-    const apiConfigs: IApiConfig[] = [];
-
-    const directories = fs.readdirSync(srcPath, { withFileTypes: true });
-    for (const dir of directories) {
-        if (dir.isDirectory() && dir.name !== "lib") {
-            const modulePath = path.join(srcPath, dir.name);
-            console.log(`${dir.name}:`);
-            if(fs.existsSync(modulePath)) {
-                try {
-                    const module:{apiConfig:IApiConfig} = await import(modulePath) as any;
-                    if (module.apiConfig) {
-                        apiConfigs.push(module.apiConfig);
-                    }
-                } catch (err) {
-                    console.warn(`  Error loading endpoints for ${dir.name}`);
-                    console.warn(err);
-                }
-            } else {
-                console.warn(`  <No endpoints>`);
-            }
-        }
-    }
-
-    return apiConfigs;
-}
-
 // Initialize the server
-(async () => {
-    try {
-        const apiConfigs = await loadAllApiConfigs();
+// Merge all configs and register routes
+apiConfigs.forEach((config) => registerRoutes(config));
 
-        // Merge all configs and register routes
-        apiConfigs.forEach((config) => registerRoutes(config));
+// Error handler middleware
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+});
 
-        // Error handler middleware
-        app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-            console.error(err);
-            res.status(500).json({ error: err.message });
-        });
-
-        // Start the server
-        const PORT = process.env.PORT || 3002;
-        app.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT}`);
-        });
-    } catch (err) {
-        console.error("Failed to load API configs:", err);
-        process.exit(1);
-    }
-})();
+export default app;
