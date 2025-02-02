@@ -7,10 +7,10 @@ import { create, loadBy, loadById, remove, search, transform, update } from "../
 const db = database();
 
 export const basicCrudService = <
-    Entity extends {id: number},
+    Entity extends {id: string},
     NewEntity = NewObj<Entity>,
     EntityUpdate = Partial<Entity>,
-    ReturnedEntity extends {id:number} = Entity,
+    ReturnedEntity extends {id:string} = Entity,
 >(
     table:string, nameField:string = "name",
     afterLoad:Func<Entity, ReturnedEntity> = transform,
@@ -32,18 +32,18 @@ export const basicRelationService = <R, T = R>(
     otherTable: string, otherTableIdField: string,
     afterLoad:Func<T, R> = transform
 ) => ({
-    add: (relationId: number, id: number) => db
+    add: (relationId: string, id: string) => db
         .insert({ [relationField]: relationId, [otherTableIdField]: id })
         .into(relationTable)
         .onConflict([relationField, otherTableIdField])
         .ignore(),
 
-    remove: (relationId: number, id: number) => db
+    remove: (relationId: string, id: string) => db
         .delete()
         .from(relationTable)
         .where({ [relationField]: relationId, [otherTableIdField]: id }),
 
-    get: (id: number):Promise<R[]> => db
+    get: (id: string):Promise<R[]> => db
         .select(`${otherTable}.*`)
         .from(otherTable)
         .join(relationTable, `${otherTable}.id`, `${relationTable}.${otherTableIdField}`)
@@ -56,7 +56,7 @@ export const twoWayRelationService = <R, T = R>(
     relationTableA: string, relationTableB: string, tableB: string,
     afterLoad: Func<T, R> = transform
 ) => ({
-    get: (id: number): Promise<R[]> => db
+    get: (id: string): Promise<R[]> => db
         .select(`${tableB}.*`)
         .from(tableB)
         .join(relationTableB, `${tableB}.id`, `${relationTableB}.${tableBIdField}`)

@@ -86,7 +86,7 @@ export const parseNestedQuery = (query:any) => Object.keys(query)
 export const transform = <T, R>(obj:T) => obj as unknown as R;
 
 export const create = <
-    Entity extends {id: number},
+    Entity extends {id: string},
     NewEntity = NewObj<Entity>,
     ReturnedEntity = Entity,
 >(
@@ -140,7 +140,7 @@ export const search = <T, R = T>(table:string, orderField: string, afterLoad:Fun
             .then(map(afterLoad));
     }
 
-export const loadById = <T, R = T>(table:string, afterLoad:Func<T, R> = transform) => (id:number):Promise<R> => db
+export const loadById = <T, R = T>(table:string, afterLoad:Func<T, R> = transform) => (id:string):Promise<R> => db
     .select("*")
     .from(table)
     .where({ id })
@@ -155,20 +155,20 @@ export const loadBy = <T, R = T>(field:string, table:string, afterLoad:Func<T, R
     .then(afterLoad);
 
 export const update = <
-    Entity extends {id: number},
+    Entity extends {id: string},
     EntityUpdate = Partial<Entity>,
     ReturnedEntity = Entity,
 >(
     table:string,
     beforeUpdate:Func<EntityUpdate, Partial<Entity>> = transform,
     afterLoad: Func<Entity, ReturnedEntity> = transform,
-) => (id:number, updated:EntityUpdate):Promise<ReturnedEntity> => db
+) => (id:string, updated:EntityUpdate):Promise<ReturnedEntity> => db
     .update(beforeUpdate(updated))
     .into(table)
     .where({ id })
     .then(() => loadById<Entity, ReturnedEntity>(table, afterLoad)(id));
 
-export const remove = (table:string) => (id:number):Promise<any> => db.delete().from(table).where({ id });
+export const remove = (table:string) => (id:string):Promise<any> => db.delete().from(table).where({ id });
 
 export const mapKeys = (f:Func<string, string>) => (obj:Index<any>):Index<any> => Object.keys(obj).reduce(
     (all:Index<any>, key:string) => {
