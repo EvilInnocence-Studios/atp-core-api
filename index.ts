@@ -6,7 +6,6 @@ import fileUpload from 'express-fileupload';
 import { types } from 'pg';
 import { apiConfigs } from "../../apiConfig";
 import { IApiConfig } from "./endpoints";
-import serverless from "serverless-http";
 
 const app = express();
 
