@@ -9,7 +9,7 @@ const db = database();
 export const getParams      = (args:any[]):Params => args[0] as Params;
 export const getParam       = <T>(name:string) => (args:any[]) => getParams(args)[name] as T;
 
-export const getBody        = <T>(args:any[]):T => args[1] as T;
+export const getBody        = <T>(args:any[]):T => (Buffer.isBuffer(args[1]) ? JSON.parse(args[1].toString()) : args[1]) as T;
 export const getBodyParam   = <T>(name:string) => (args:any[]) => getBody<any>(args)[name] as T;
 export const getFile        = pipe(getBody<{file:any}>, prop<any, any>("file"));
 
