@@ -1,4 +1,4 @@
-import { map } from "ts-functional";
+import { filter, map } from "ts-functional";
 import { Func } from "ts-functional/dist/types";
 import { NewObj } from "../../../core-shared/express/types";
 import { database } from "../../database";
@@ -30,7 +30,7 @@ export const basicCrudService = <
 export const basicRelationService = <R, T = R>(
     relationTable: string, relationField: string,
     otherTable: string, otherTableIdField: string,
-    afterLoad:Func<T, R> = transform
+    afterLoad:Func<T, R> = transform,
 ) => ({
     add: (relationId: string, id: string) => db
         .insert({ [relationField]: relationId, [otherTableIdField]: id })
@@ -54,7 +54,7 @@ export const basicRelationService = <R, T = R>(
 export const twoWayRelationService = <R, T = R>(
     tableAIdField: string, intermediateIdField: string, tableBIdField: string,
     relationTableA: string, relationTableB: string, tableB: string,
-    afterLoad: Func<T, R> = transform
+    afterLoad: Func<T, R> = transform,
 ) => ({
     get: (id: string): Promise<R[]> => db
         .select(`${tableB}.*`)

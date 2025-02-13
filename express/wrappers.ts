@@ -1,6 +1,7 @@
 import { Request, RequestHandler, Response } from "express";
+import { catchErrors } from "./errors";
 import { DeleteFunction, GetFunction, PatchFunction, PostFunction, PutFunction } from "./types";
-import { catchErrors, parseNestedQuery } from "./util";
+import { parseNestedQuery } from "./util";
 
 export const get = <T>(f:GetFunction<T>):RequestHandler => (request:Request, response:Response) => {
   const query = request.query;

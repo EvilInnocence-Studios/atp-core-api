@@ -1,74 +1,15 @@
 import { Response } from "express";
-import { at, defaultValue, map, objFilter, pipe, prop, split } from "ts-functional";
+import { map, objFilter } from "ts-functional";
 import { Func, Index } from "ts-functional/dist/types";
-import { NewObj, Params, Query, QueryArrayValue, QuerySingleValue, QueryValue } from "../../core-shared/express/types";
+import { NewObj, Query, QueryArrayValue, QuerySingleValue, QueryValue } from "../../core-shared/express/types";
 import { database } from "../database";
 
 const db = database();
-
-export const getParams      = (args:any[]):Params => args[0] as Params;
-export const getParam       = <T>(name:string) => (args:any[]) => getParams(args)[name] as T;
-
-export const getBody        = <T>(args:any[]):T => (Buffer.isBuffer(args[1]) ? JSON.parse(args[1].toString()) : args[1]) as T;
-export const getBodyParam   = <T>(name:string) => (args:any[]) => getBody<any>(args)[name] as T;
-export const getFile        = pipe(getBody<{file:any}>, prop<any, any>("file"));
-
-export const getQuery       = (args:any[]):Query => args[1] as Query;
-export const getQueryParam  = <T>(name:string) => (args:any[]) => getQuery(args)[name] as T;
-
-export const getHeaders     = (args:any[]):Headers => args[2] as Headers;
-export const getHeader      = (name:string) => (args:any[]):string => (getHeaders(args) as any)[name];
-export const getEnv         = at<NodeJS.ProcessEnv>(3);
-export const getEnvVar      = (name:string) => pipe(getEnv, prop<any, any>(name));
-export const getLoginToken  = pipe(getHeader('authorization'), defaultValue(""), split(" "), at(1));
 
 export const addCors = (response:Response) => {
     response.append('Access-Control-Allow-Origin', "*");
     response.append('Access-Control-Allow-Credentials', "true");
 }
-
-export const addJson = (response:Response) => {
-    response.append('Content-Type', 'application/json');
-};
-
-interface IError {
-    statusCode: number;
-    message: string;
-}
-
-const isError = (e:any):e is IError => e.message && e.statusCode;
-export const error = (statusCode:number, message:string):IError => ({statusCode, message});
-export const error401 = error(401, "Unauthorized");
-export const error403 = error(403, "Permission denied");
-export const error500 = (message:string = "Something bad happened. I don't know what else to tell you. :("):IError => error(500, message);
-export const error409 = (message:string = "Conflict"):IError => error(409, message);
-
-// More fully type this
-export const catchErrors = async <T>(response:Response, f:() => Promise<T>) => {
-    f()
-        .then((results:T) => {
-            response.statusCode = 200;
-            // addCors(response);
-            addJson(response);
-            response.send(JSON.stringify(results));
-        })
-            
-        .catch(e => {
-            console.log(e);
-            const err:IError = isError(e) ? e : {
-              message: `Something bad happened. I don't know what else to tell you. :( -- ${JSON.stringify(e)}`,
-              statusCode: 500,
-            };
-            
-            response.statusCode = e.statusCode || 500;
-            // addCors(response);
-            addJson(response);
-            response.send(JSON.stringify(process.env.ENV === "local"
-                ? {message: e.message, details: e, env: process.env}
-                : {message: e.message}
-            ));
-        });
-};
 
 export const parseNestedQuery = (query:any) => Object.keys(query)
     .map((q:string):[string, string[]] => [q, q.replace(/\]/g, "").split("[")])
