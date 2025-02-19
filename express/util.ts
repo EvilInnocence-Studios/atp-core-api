@@ -3,6 +3,7 @@ import { map, objFilter } from "ts-functional";
 import { Func, Index } from "ts-functional/dist/types";
 import { NewObj, Query, QueryArrayValue, QuerySingleValue, QueryValue } from "../../core-shared/express/types";
 import { database } from "../database";
+import { error500 } from "./errors";
 
 const db = database();
 
@@ -118,3 +119,40 @@ export const mapKeys = (f:Func<string, string>) => (obj:Index<any>):Index<any> =
     },
     {}
 );
+
+// TODO: Test this
+export const reorder = async <T extends {id: string, order: number}>(table:string, entityId: string, newIndex: number, where?:Index<any>) => {
+    // Get all items that match the where clause
+    const items:T[] = await db(table).where(where || {}).orderBy("order");
+
+    // Find the index of the entity to reorder
+    const oldIndex = items.findIndex(item => item.id === entityId);
+
+    // If the entity is not found, throw an error
+    if(oldIndex === -1) {
+        throw error500(`Entity with id ${entityId} not found in table ${table}`);
+    }
+
+    // If the entity is already in the correct position, return
+    if(oldIndex === newIndex) {
+        return Promise.resolve();
+    }
+
+    // Reorder the items
+    const reordered = oldIndex < newIndex
+        ? [
+            ...items.slice(0, oldIndex),
+            ...items.slice(oldIndex + 1, newIndex + 1),
+            items[oldIndex],
+            ...items.slice(newIndex + 1),
+        ]
+        : [
+            ...items.slice(0, newIndex),
+            items[oldIndex],
+            ...items.slice(newIndex, oldIndex),
+            ...items.slice(oldIndex + 1),
+        ];
+
+    // Update the order of the items in the database
+    await Promise.all(reordered.map((item, order) => db(table).update({ order }).where({ id: item.id })));
+}
