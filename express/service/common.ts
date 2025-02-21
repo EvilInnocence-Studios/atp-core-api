@@ -27,29 +27,51 @@ export const basicCrudService = <
     remove:     remove(table),
 });
 
+const defaultHooks = {
+    afterLoad: transform,
+    afterAdd: () => Promise.resolve(),
+    afterRemove: () => Promise.resolve(),
+}
+
 export const basicRelationService = <R, T = R>(
     relationTable: string, relationField: string,
     otherTable: string, otherTableIdField: string,
-    afterLoad:Func<T, R> = transform,
-) => ({
-    add: (relationId: string, id: string) => db
-        .insert({ [relationField]: relationId, [otherTableIdField]: id })
-        .into(relationTable)
-        .onConflict([relationField, otherTableIdField])
-        .ignore(),
+    hooks: Partial<{
+        afterLoad:Func<T, R>,
+        afterAdd:(relationId: string, id: string) => Promise<any>,
+        afterRemove:(relationId: string, id: string) => Promise<any>,
+    }> = {},
+) => {
+    const mergedHooks = { ...defaultHooks, ...hooks };
 
-    remove: (relationId: string, id: string) => db
-        .delete()
-        .from(relationTable)
-        .where({ [relationField]: relationId, [otherTableIdField]: id }),
+    return {
+        add: async (relationId: string, id: string) => {
+            await db
+                .insert({ [relationField]: relationId, [otherTableIdField]: id })
+                .into(relationTable)
+                .onConflict([relationField, otherTableIdField])
+                .ignore();
+            
+            return mergedHooks.afterAdd(relationId, id);
+        },
 
-    get: (id: string):Promise<R[]> => db
-        .select(`${otherTable}.*`)
-        .from(otherTable)
-        .join(relationTable, `${otherTable}.id`, `${relationTable}.${otherTableIdField}`)
-        .where(`${relationTable}.${relationField}`, id)
-        .then(map(afterLoad)),
-});
+        remove: async (relationId: string, id: string) => {
+            await db
+                .delete()
+                .from(relationTable)
+                .where({ [relationField]: relationId, [otherTableIdField]: id });
+
+            return mergedHooks.afterRemove(relationId, id);
+        },
+
+        get: (id: string):Promise<R[]> => db
+            .select(`${otherTable}.*`)
+            .from(otherTable)
+            .join(relationTable, `${otherTable}.id`, `${relationTable}.${otherTableIdField}`)
+            .where(`${relationTable}.${relationField}`, id)
+            .then(map(mergedHooks.afterLoad)),
+    };
+};
 
 export const twoWayRelationService = <R, T = R>(
     tableAIdField: string, intermediateIdField: string, tableBIdField: string,

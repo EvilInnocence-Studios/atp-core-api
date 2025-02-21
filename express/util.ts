@@ -120,8 +120,9 @@ export const mapKeys = (f:Func<string, string>) => (obj:Index<any>):Index<any> =
     {}
 );
 
-// TODO: Test this
-export const reorder = async <T extends {id: string, order: number}>(table:string, entityId: string, newIndex: number, where?:Index<any>) => {
+export const reorder = async <T extends {id: string, order: number}>(table:string, entityId: string, newIndexStr: string, where?:Index<any>) => {
+    const newIndex:number = parseInt(newIndexStr);
+    
     // Get all items that match the where clause
     const items:T[] = await db(table).where(where || {}).orderBy("order");
 
