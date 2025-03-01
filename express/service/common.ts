@@ -61,9 +61,7 @@ export const basicRelationService = <R, T = R>(
         add: async (relationId: string, id: string) => {
             await db
                 .insert({ [relationField]: relationId, [otherTableIdField]: id })
-                .into(relationTable)
-                .onConflict([relationField, otherTableIdField])
-                .ignore();
+                .into(relationTable);
             
             return afterAdd(relationId, id);
         },
