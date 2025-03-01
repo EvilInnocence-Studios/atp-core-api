@@ -19,19 +19,20 @@ export const getHeader       = (name:string) => (args:any[]):string => (getHeade
 export const getEnv          = at<NodeJS.ProcessEnv>(3);
 export const getEnvVar       = (name:string) => pipe(getEnv, prop<any, any>(name));
 export const getLoginToken   = pipe(getHeader('authorization'), defaultValue(""), split(" "), at(1));
-export const getLoggedInUser = memoizePromise(async (args:any[]) => {
+export const getPublicUser   = memoizePromise(async () => User.loadByName("public"), {});
+export const getLoggedInUser = async (args:any[]):Promise<string | null> => {
     const token = getLoginToken(args);
     let userId:string | null = null;
     if (!token) {
         // If no token is found, load the public user
-        const publicUser = await memoizePromise(async () => User.loadByName("public"), {})();
+        const publicUser = await getPublicUser();
         userId = publicUser.id;
     } else {
         // Get the user id from the login token
         userId = (jwt.verify(token, secret) as jwt.JwtPayload).userId;
     }
     return userId;
-});
+}
 
 export const getUserPermissions = memoizePromise(async (args:any[]) => {
     const userId = await getLoggedInUser(args);

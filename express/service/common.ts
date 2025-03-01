@@ -6,6 +6,13 @@ import { create, loadBy, loadById, remove, search, transform, update } from "../
 
 const db = database();
 
+const defaultCrudHooks = {
+    afterLoad: transform,
+    beforeCreate: transform,
+    beforeUpdate: transform,
+    afterCreate: () => {},
+}
+
 export const basicCrudService = <
     Entity extends {id: string},
     NewEntity = NewObj<Entity>,
@@ -13,21 +20,27 @@ export const basicCrudService = <
     ReturnedEntity extends {id:string} = Entity,
 >(
     table:string, nameField:string = "name",
-    afterLoad:Func<Entity, ReturnedEntity> = transform,
-    beforeCreate: Func<NewEntity, NewObj<Entity>> = transform,
-    beforeUpdate:Func<EntityUpdate, Partial<Entity>> = transform,
-    afterCreate: Func<Entity, void> = () => {},
-) => ({
-    create:     create<Entity, NewEntity, ReturnedEntity>(table, nameField, beforeCreate, afterLoad),
-    search:     search<Entity, ReturnedEntity>(table, nameField, afterLoad),
-    loadById:   loadById<Entity, ReturnedEntity>(table, afterLoad),
-    loadByName: loadBy<Entity, ReturnedEntity>(nameField, table, afterLoad),
-    loadBy:     (field:string) => loadBy<Entity, ReturnedEntity>(field, table, afterLoad),
-    update:     update<Entity, EntityUpdate, ReturnedEntity>(table, beforeUpdate, afterLoad),
-    remove:     remove(table),
-});
+    hooks: Partial<{
+        afterLoad: Func<Entity, ReturnedEntity>;
+        beforeCreate: Func<NewEntity, NewObj<Entity>>;
+        beforeUpdate: Func<EntityUpdate, Partial<Entity>>;
+        afterCreate: Func<Entity, void>;
+    }> = {},
+) => {
+    const { afterLoad, beforeCreate, beforeUpdate, afterCreate } = { ...defaultCrudHooks, ...hooks };
 
-const defaultHooks = {
+    return {
+        create:     create<Entity, NewEntity, ReturnedEntity>(table, nameField, beforeCreate, afterLoad, afterCreate),
+        search:     search<Entity, ReturnedEntity>(table, nameField, afterLoad),
+        loadById:   loadById<Entity, ReturnedEntity>(table, afterLoad),
+        loadByName: loadBy<Entity, ReturnedEntity>(nameField, table, afterLoad),
+        loadBy:     (field:string) => loadBy<Entity, ReturnedEntity>(field, table, afterLoad),
+        update:     update<Entity, EntityUpdate, ReturnedEntity>(table, beforeUpdate, afterLoad),
+        remove:     remove(table),
+    };
+}
+
+const defaultRelationHooks = {
     afterLoad: transform,
     afterAdd: () => Promise.resolve(),
     afterRemove: () => Promise.resolve(),
@@ -42,7 +55,7 @@ export const basicRelationService = <R, T = R>(
         afterRemove:(relationId: string, id: string) => Promise<any>,
     }> = {},
 ) => {
-    const mergedHooks = { ...defaultHooks, ...hooks };
+    const {afterAdd, afterLoad, afterRemove} = { ...defaultRelationHooks, ...hooks };
 
     return {
         add: async (relationId: string, id: string) => {
@@ -52,7 +65,7 @@ export const basicRelationService = <R, T = R>(
                 .onConflict([relationField, otherTableIdField])
                 .ignore();
             
-            return mergedHooks.afterAdd(relationId, id);
+            return afterAdd(relationId, id);
         },
 
         remove: async (relationId: string, id: string) => {
@@ -61,7 +74,7 @@ export const basicRelationService = <R, T = R>(
                 .from(relationTable)
                 .where({ [relationField]: relationId, [otherTableIdField]: id });
 
-            return mergedHooks.afterRemove(relationId, id);
+            return afterRemove(relationId, id);
         },
 
         get: (id: string):Promise<R[]> => db
@@ -69,20 +82,30 @@ export const basicRelationService = <R, T = R>(
             .from(otherTable)
             .join(relationTable, `${otherTable}.id`, `${relationTable}.${otherTableIdField}`)
             .where(`${relationTable}.${relationField}`, id)
-            .then(map(mergedHooks.afterLoad)),
+            .then(map(afterLoad)),
     };
+};
+
+const defaultTwoWayRelationHooks = {
+    afterLoad: transform,
 };
 
 export const twoWayRelationService = <R, T = R>(
     tableAIdField: string, intermediateIdField: string, tableBIdField: string,
     relationTableA: string, relationTableB: string, tableB: string,
-    afterLoad: Func<T, R> = transform,
-) => ({
-    get: (id: string): Promise<R[]> => db
-        .select(`${tableB}.*`)
-        .from(tableB)
-        .join(relationTableB, `${tableB}.id`, `${relationTableB}.${tableBIdField}`)
-        .join(relationTableA, `${relationTableB}.${intermediateIdField}`, `${relationTableA}.${intermediateIdField}`)
-        .where(`${relationTableA}.${tableAIdField}`, id)
-        .then(map(afterLoad)),
-});
+    hooks: Partial<{
+        afterLoad: Func<T, R>;
+    }> = {},
+) => {
+    const {afterLoad} = { ...defaultTwoWayRelationHooks, ...hooks };
+
+    return {
+        get: (id: string): Promise<R[]> => db
+            .select(`${tableB}.*`)
+            .from(tableB)
+            .join(relationTableB, `${tableB}.id`, `${relationTableB}.${tableBIdField}`)
+            .join(relationTableA, `${relationTableB}.${intermediateIdField}`, `${relationTableA}.${intermediateIdField}`)
+            .where(`${relationTableA}.${tableAIdField}`, id)
+            .then(map(afterLoad)),
+    };
+}
