@@ -42,7 +42,7 @@ function registerRoutes(config: IApiConfig, basePath = "") {
         Object.entries(methodsOrSubRoutes).forEach(([key, handlerOrSubConfig]) => {
             if (["GET", "POST", "PUT", "PATCH", "DELETE"].includes(key.toUpperCase())) {
                 const method = key.toLowerCase();
-                console.log(`  ${key} ${fullPath}`);
+                // console.log(`  ${key} ${fullPath}`);
                 (app as any)[method](fullPath, handlerOrSubConfig as express.RequestHandler);
             } else if (typeof handlerOrSubConfig === "object") {
                 // Handle nested sub-route
