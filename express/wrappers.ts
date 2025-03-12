@@ -4,6 +4,7 @@ import { DeleteFunction, GetFunction, PatchFunction, PostFunction, PutFunction }
 import { parseNestedQuery } from "./util";
 
 export const get = <T>(f:GetFunction<T>):RequestHandler => (request:Request, response:Response) => {
+  console.log(request.method, request.url, request.body);
   const query = request.query;
   catchErrors<T>(response, () => f(
     request.params,
@@ -14,6 +15,7 @@ export const get = <T>(f:GetFunction<T>):RequestHandler => (request:Request, res
 };
   
 export const post = <Result, Body = Partial<Result>>(f:PostFunction<Result, Body>):RequestHandler => (request:Request, response:Response) => {
+  console.log(request.method, request.url, request.body);
   catchErrors<Result>(response, () => f(
     request.params,
     request.body,
@@ -23,6 +25,7 @@ export const post = <Result, Body = Partial<Result>>(f:PostFunction<Result, Body
 };
 
 export const put = <T>(f:PutFunction<T>):RequestHandler => (request:Request, response:Response) => {
+  console.log(request.method, request.url, request.body);
     catchErrors<T>(response, () => f(
       request.params,
       request.body,
@@ -32,6 +35,7 @@ export const put = <T>(f:PutFunction<T>):RequestHandler => (request:Request, res
   };
     
   export const patch = <Result, Body = Result>(f:PatchFunction<Result, Body>) => (request:Request, response:Response) => {
+    console.log(request.method, request.url, request.body);
     catchErrors<Result>(response, () => f(
       request.params,
       request.body,
@@ -41,6 +45,7 @@ export const put = <T>(f:PutFunction<T>):RequestHandler => (request:Request, res
   };
   
   export const del = (f:DeleteFunction) => (request:Request, response:Response) => {
+    console.log(request.method, request.url, request.body);
     catchErrors<null>(response, () => f(
       request.params,
       undefined,
@@ -50,6 +55,7 @@ export const put = <T>(f:PutFunction<T>):RequestHandler => (request:Request, res
   };
   
   export const upload = (f:PostFunction<any, any>) => (request:Request, response:Response) => {
+    console.log(request.method, request.url, request.body);
     catchErrors<any>(response, () => f(
       request.params,
       request.files,

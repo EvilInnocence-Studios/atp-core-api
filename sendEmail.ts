@@ -5,7 +5,7 @@ const region = getAppConfig().awsRegion;
 
 export const sendEmail = async (subject: string, body: string, to: string[]) => {
     const client = new SESClient({region });
-    const command = new SendEmailCommand({
+    const params = {
         Destination: {
             ToAddresses: to
         },
@@ -22,11 +22,15 @@ export const sendEmail = async (subject: string, body: string, to: string[]) => 
             }
         },
         Source: getAppConfig().supportEmail,
-    });
+    };
+    console.log(params);
+    const command = new SendEmailCommand(params);
 
     try {
-        await client.send(command);
+        const response = await client.send(command);
+        console.log(response);
     } catch(e) {
+        console.log(e);
         console.error(e);
     }
 }

@@ -96,6 +96,17 @@ export const loadBy = <T, R = T>(field:string, table:string, afterLoad:Func<T, R
     .first()
     .then(afterLoad);
 
+export const loadByInsensitive = <T, R = T>(field:string, table:string, afterLoad:Func<T, R> = transform) => (value:string):Promise<R> => {
+    const stmt = db
+        .select("*")
+        .from(table)
+        .whereRaw(`LOWER("${field}") = LOWER(?)`, value);
+    console.log(stmt.toSQL());
+    return stmt
+        .first()
+        .then(afterLoad);
+}
+
 export const update = <
     Entity extends {id: string},
     EntityUpdate = Partial<Entity>,
