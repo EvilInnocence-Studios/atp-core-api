@@ -14,9 +14,10 @@ import {
     PutMethodResponseCommand
 } from '@aws-sdk/client-api-gateway';
 import { LambdaClient } from '@aws-sdk/client-lambda';
+import { fromEnv } from '@aws-sdk/credential-providers';
 
-const apiGateway = new APIGatewayClient({ region: 'us-east-1'});
-const lambda = new LambdaClient({ region: 'us-east-1'});
+const apiGateway = new APIGatewayClient({ region: 'us-east-1', credentials: fromEnv()});
+const lambda = new LambdaClient({ region: 'us-east-1', credentials: fromEnv()});
 
 export const connectToApiGateway = async(
     name: string,

@@ -2,6 +2,7 @@ import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectComm
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getAppConfig } from "../../config";
 import { error500 } from "./express/errors";
+import { fromEnv } from "@aws-sdk/credential-providers";
 
 export declare interface IUploadOptions {
     failOnExist?: boolean;
@@ -11,7 +12,7 @@ const Bucket = getAppConfig().mediaBucket;
 const region = getAppConfig().awsRegion;
 
 export const uploadMedia = async (urlBase:string, file: any, options?:IUploadOptions) => {
-    const client = new S3Client({ region });
+    const client = new S3Client({ region, credentials: fromEnv() });
     const key = `${urlBase}/${file.name}`;
 
     // Determine if file already exists
@@ -39,7 +40,7 @@ export const uploadMedia = async (urlBase:string, file: any, options?:IUploadOpt
 }
 
 export const removeMedia = async (urlBase:string, name:string) => {
-    const client = new S3Client({ region });
+    const client = new S3Client({ region, credentials: fromEnv()});
     const key = `${urlBase}/${name}`;
     const command = new DeleteObjectCommand({ Bucket, Key: key });
     const response = await client.send(command);
@@ -52,7 +53,7 @@ export const removeMedia = async (urlBase:string, name:string) => {
 }
 
 export const downloadMedia = async (urlBase:string, name:string) => {
-    const client = new S3Client({ region });
+    const client = new S3Client({ region, credentials: fromEnv()});
     const key = `${urlBase}/${name}`;
     const command = new GetObjectCommand({ Bucket, Key: key });
     return await getSignedUrl(client, command, {expiresIn: 3600});

@@ -1,10 +1,11 @@
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import { getAppConfig } from "../../config";
+import { fromEnv } from "@aws-sdk/credential-providers";
 
 const region = getAppConfig().awsRegion;
 
 export const sendEmail = async (subject: string, body: string, to: string[]) => {
-    const client = new SESClient({region });
+    const client = new SESClient({region, credentials: fromEnv() });
     const params = {
         Destination: {
             ToAddresses: to
