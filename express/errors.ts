@@ -36,9 +36,6 @@ export const catchErrors = async <T>(response:Response, f:() => Promise<T>) => {
             response.statusCode = e.statusCode || 500;
             // addCors(response);
             addJson(response);
-            response.send(JSON.stringify(process.env.ENV === "local"
-                ? {message: e.message, details: e, env: process.env}
-                : {message: e.message}
-            ));
+            response.send(JSON.stringify({message: e.message}));
         });
 };
