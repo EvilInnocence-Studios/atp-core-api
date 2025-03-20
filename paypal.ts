@@ -13,7 +13,7 @@ export const client = new Client({
         oAuthClientSecret: PAYPAL_CLIENT_SECRET as string,
     },
     timeout: 0,
-    environment: process.env.env === "local" ? Environment.Sandbox : Environment.Production,
+    environment: Environment.Production,
     logging: {
         logLevel: LogLevel.Info,
         logRequest: { logBody: true },
