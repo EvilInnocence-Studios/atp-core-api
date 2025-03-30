@@ -55,10 +55,10 @@ export const put = <T>(f:PutFunction<T>):RequestHandler => (request:Request, res
   };
   
   export const upload = (f:PostFunction<any, any>) => (request:Request, response:Response) => {
-    console.log(request.method, request.url, request.body);
+    console.log(request.method, request.url, request.body, request.files);
     catchErrors<any>(response, () => f(
       request.params,
-      request.files,
+      {...request.files, ...request.body},
       request.headers,
       process.env,
     ));

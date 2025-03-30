@@ -8,6 +8,18 @@ export declare interface IUploadOptions {
     failOnExist?: boolean;
 }
 
+export declare interface IFile {
+    name: string;
+    data: Buffer;
+    size: number;
+    encoding: string;
+    tempFilePath: string;
+    truncated: boolean;
+    mimetype: string;
+    md5: string;
+    mv: (path:string) => Promise<void>;
+}
+
 const Bucket = getAppConfig().mediaBucket;
 const region = getAppConfig().awsRegion;
 
