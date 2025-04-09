@@ -64,7 +64,7 @@ export const search = <T, R = T>(table:string, orderField: string, afterLoad:Fun
         )(query) as Index<QueryArrayValue>;
 
         const where:Index<QuerySingleValue> = objFilter(
-            (value:QueryValue) => !(typeof value === 'object')
+            (value:QueryValue) => typeof value !== 'object' && typeof value !== 'undefined'
         )(query) as Index<QuerySingleValue>;
 
         const stmt = db
