@@ -2,7 +2,7 @@ import { filter, map } from "ts-functional";
 import { Func } from "ts-functional/dist/types";
 import { NewObj } from "../../../core-shared/express/types";
 import { database } from "../../database";
-import { create, loadBy, loadById, remove, search, transform, update } from "../util";
+import { create, loadBy, loadById, loadByInsensitive, remove, search, transform, update } from "../util";
 
 const db = database();
 
@@ -30,13 +30,14 @@ export const basicCrudService = <
     const { afterLoad, beforeCreate, beforeUpdate, afterCreate } = { ...defaultCrudHooks, ...hooks };
 
     return {
-        create:     create<Entity, NewEntity, ReturnedEntity>(table, nameField, beforeCreate, afterLoad, afterCreate),
-        search:     search<Entity, ReturnedEntity>(table, nameField, afterLoad),
-        loadById:   loadById<Entity, ReturnedEntity>(table, afterLoad),
-        loadByName: loadBy<Entity, ReturnedEntity>(nameField, table, afterLoad),
-        loadBy:     (field:string) => loadBy<Entity, ReturnedEntity>(field, table, afterLoad),
-        update:     update<Entity, EntityUpdate, ReturnedEntity>(table, beforeUpdate, afterLoad),
-        remove:     remove(table),
+        create:            create<Entity, NewEntity, ReturnedEntity>(table, nameField, beforeCreate, afterLoad, afterCreate),
+        search:            search<Entity, ReturnedEntity>(table, nameField, afterLoad),
+        loadById:          loadById<Entity, ReturnedEntity>(table, afterLoad),
+        loadByName:        loadBy<Entity, ReturnedEntity>(nameField, table, afterLoad),
+        loadBy:            (field:string) => loadBy<Entity, ReturnedEntity>(field, table, afterLoad),
+        loadByInsensitive: (field:string) => loadByInsensitive<Entity, ReturnedEntity>(field, table, afterLoad),
+        update:            update<Entity, EntityUpdate, ReturnedEntity>(table, beforeUpdate, afterLoad),
+        remove:            remove(table),
     };
 }
 
