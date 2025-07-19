@@ -23,6 +23,17 @@ export declare interface IFile {
 const Bucket = getAppConfig().mediaBucket;
 const region = getAppConfig().awsRegion;
 
+export const getPresignedUploadUrl = (Key:string) => {
+    const client = new S3Client({ region, credentials: fromEnv() });
+    const command = new PutObjectCommand({
+        Bucket,
+        Key,
+        ACL: "public-read",
+    });
+
+    return getSignedUrl(client, command, { expiresIn: 3600 });
+}
+
 export const uploadMedia = async (urlBase:string, file: any, options?:IUploadOptions) => {
     const client = new S3Client({ region, credentials: fromEnv() });
     const key = `${urlBase}/${file.name}`;
@@ -42,6 +53,7 @@ export const uploadMedia = async (urlBase:string, file: any, options?:IUploadOpt
     }
 
     // Upload file to S3
+    console.log(`Uploading file to S3: ${key}`);
     const command = new PutObjectCommand({
         Bucket,
         Key: key,
@@ -49,6 +61,7 @@ export const uploadMedia = async (urlBase:string, file: any, options?:IUploadOpt
         ACL: "public-read",
     });
     await client.send(command);
+    console.log(`File uploaded successfully: ${key}`);
 }
 
 export const removeMedia = async (urlBase:string, name:string) => {
