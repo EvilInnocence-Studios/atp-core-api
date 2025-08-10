@@ -3,6 +3,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getAppConfig } from "../../config";
 import { error500 } from "./express/errors";
 import { fromEnv } from "@aws-sdk/credential-providers";
+import { Setting } from "../common/setting/service";
 
 export declare interface IUploadOptions {
     failOnExist?: boolean;
@@ -20,10 +21,12 @@ export declare interface IFile {
     mv: (path:string) => Promise<void>;
 }
 
-const Bucket = getAppConfig().mediaBucket;
-const region = getAppConfig().awsRegion;
+const getRegion = () => Setting.get("awsRegion");
+const getBucket = () => Setting.get("mediaBucket");
 
-export const getPresignedUploadUrl = (Key:string) => {
+export const getPresignedUploadUrl = async (Key:string) => {
+    const region = await getRegion();
+    const Bucket = await getBucket();
     const client = new S3Client({ region, credentials: fromEnv() });
     const command = new PutObjectCommand({
         Bucket,
@@ -35,6 +38,8 @@ export const getPresignedUploadUrl = (Key:string) => {
 }
 
 export const uploadMedia = async (urlBase:string, file: any, options?:IUploadOptions) => {
+    const region = await getRegion();
+    const Bucket = await getBucket();
     const client = new S3Client({ region, credentials: fromEnv() });
     const key = `${urlBase}/${file.name}`;
 
@@ -65,6 +70,8 @@ export const uploadMedia = async (urlBase:string, file: any, options?:IUploadOpt
 }
 
 export const removeMedia = async (urlBase:string, name:string) => {
+    const region = await getRegion();
+    const Bucket = await getBucket();
     const client = new S3Client({ region, credentials: fromEnv()});
     const key = `${urlBase}/${name}`;
     const command = new DeleteObjectCommand({ Bucket, Key: key });
@@ -78,6 +85,8 @@ export const removeMedia = async (urlBase:string, name:string) => {
 }
 
 export const downloadMedia = async (urlBase:string, name:string) => {
+    const region = await getRegion();
+    const Bucket = await getBucket();
     const client = new S3Client({ region, credentials: fromEnv()});
     const key = `${urlBase}/${name}`;
     const command = new GetObjectCommand({ Bucket, Key: key });

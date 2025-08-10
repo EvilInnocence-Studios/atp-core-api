@@ -1,10 +1,11 @@
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
-import { getAppConfig } from "../../config";
 import { fromEnv } from "@aws-sdk/credential-providers";
-
-const region = getAppConfig().awsRegion;
+import { getAppConfig } from "../../config";
+import { Setting } from "../common/setting/service";
 
 export const sendEmail = async (subject: string, body: string, to: string[]) => {
+    const region = await Setting.get("awsRegion");
+    const supportEmail = await Setting.get("supportEmail");
     const client = new SESClient({region, credentials: fromEnv() });
     const params = {
         Destination: {
@@ -22,7 +23,7 @@ export const sendEmail = async (subject: string, body: string, to: string[]) => 
                 Data: subject,
             }
         },
-        Source: getAppConfig().supportEmail,
+        Source: supportEmail,
     };
     console.log(params);
     const command = new SendEmailCommand(params);
