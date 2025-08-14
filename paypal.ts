@@ -1,16 +1,11 @@
+import { Setting } from "../common/setting/service";
 import { Client, Environment, LogLevel } from "@paypal/paypal-server-sdk";
 import request from 'superagent';
 
-const {
-    PAYPAL_CLIENT_ID,
-    PAYPAL_CLIENT_SECRET,
-    PORT = 8080,
-} = process.env;
-
-export const client = new Client({
+export const getPayPalClient = async () => new Client({
     clientCredentialsAuthCredentials: {
-        oAuthClientId: PAYPAL_CLIENT_ID as string,
-        oAuthClientSecret: PAYPAL_CLIENT_SECRET as string,
+        oAuthClientId: await Setting.get("paypalClientId"),
+        oAuthClientSecret: await Setting.get("paypalClientSecret"),
     },
     timeout: 0,
     environment: Environment.Production,
@@ -23,12 +18,15 @@ export const client = new Client({
 
 const apiBase = 'https://api-m.paypal.com/v1/';
 
-const getAccessToken = () => 
-    request.post(`${apiBase}oauth2/token`)
-        .set('Authorization', `Basic ${Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString('base64')}`)
+const getAccessToken = async () => {
+    const clientId = await Setting.get("paypalClientId");
+    const clientSecret = await Setting.get("paypalClientSecret");
+    return request.post(`${apiBase}oauth2/token`)
+        .set('Authorization', `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`)
         .set('Content-Type', 'application/x-www-form-urlencoded')
         .send({ grant_type: 'client_credentials' })
         .then(response => response.body.access_token);
+}
 
 export const subscription = {
     cancel: async (subscriptionId: string) => {
