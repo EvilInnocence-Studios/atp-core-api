@@ -7,7 +7,7 @@ const run = async () => {
     const migration = await chooseMigration(migrations);
     const direction = await chooseDirection();
 
-    console.log(`You have chosen migration: ${migration.name} (${direction})`);
+    console.log(`You have chosen migration: ${migration.name} (${migration.module}) - ${direction}`);
 
     if(direction === 'up') {
         await migration.up();
