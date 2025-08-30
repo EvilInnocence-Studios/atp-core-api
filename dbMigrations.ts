@@ -55,3 +55,15 @@ export const chooseDirection = async (): Promise<"up" | "down"> => {
         throw new Error(`Invalid direction: ${answer}`);
     }
 }
+
+export const confirmAction = async (message: string): Promise<boolean> => {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    const answer = await rl.question(`${message} (yes/no): `);
+    rl.close();
+
+    return answer.toLowerCase() === "yes";
+}
