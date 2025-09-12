@@ -1,15 +1,18 @@
 import jwt from "jsonwebtoken";
-import { at, defaultValue, memoizePromise, pipe, prop, split } from "ts-functional";
+import { at, defaultValue, memoizePromise, merge, pipe, pipeTo, prop, split } from "ts-functional";
 import { secret } from "../../../config";
 import { Params, Query } from "../../core-shared/express/types";
 import { User } from "../../uac/user/service";
 
 export const getParams       = (args:any[]):Params => args[0] as Params;
 export const getParam        = <T>(name:string) => (args:any[]) => getParams(args)[name] as T;
+export const getParamInObj   = <T>(name:string) => (args:any[]) => ({[name]: getParams(args)[name] as T});
 
 export const getBody         = <T>(args:any[]):T => (Buffer.isBuffer(args[1]) ? JSON.parse(args[1].toString()) : args[1]) as T;
 export const getBodyParam    = <T>(name:string) => (args:any[]) => getBody<any>(args)[name] as T;
 export const getFile         = pipe(getBody<{file:any}>, prop<any, any>("files"), prop("file"));
+
+export const getParamsAndBody = pipeTo(merge<any>, getParams, getBody<Query>);
 
 export const getQuery        = (args:any[]):Query => args[1] as Query;
 export const getQueryParam   = <T>(name:string) => (args:any[]) => getQuery(args)[name] as T;

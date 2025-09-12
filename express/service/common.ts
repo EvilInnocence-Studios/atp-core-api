@@ -59,21 +59,21 @@ export const basicRelationService = <R, T = R>(
     const {afterAdd, afterLoad, afterRemove} = { ...defaultRelationHooks, ...hooks };
 
     return {
-        add: async (relationId: string, id: string) => {
+        add: async (relationId: string, otherId: string) => {
             await db
-                .insert({ [relationField]: relationId, [otherTableIdField]: id })
+                .insert({ [relationField]: relationId, [otherTableIdField]: otherId })
                 .into(relationTable);
             
-            return afterAdd(relationId, id);
+            return afterAdd(relationId, otherId);
         },
 
-        remove: async (relationId: string, id: string) => {
+        remove: async (relationId: string, otherId: string) => {
             await db
                 .delete()
                 .from(relationTable)
-                .where({ [relationField]: relationId, [otherTableIdField]: id });
+                .where({ [relationField]: relationId, [otherTableIdField]: otherId });
 
-            return afterRemove(relationId, id);
+            return afterRemove(relationId, otherId);
         },
 
         get: (id: string):Promise<R[]> => db
