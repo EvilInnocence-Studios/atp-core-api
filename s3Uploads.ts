@@ -7,6 +7,7 @@ import { Setting } from "../common/setting/service";
 
 export declare interface IUploadOptions {
     failOnExist?: boolean;
+    skipExisting?: boolean;
 }
 
 export declare interface IFile {
@@ -43,12 +44,22 @@ export const uploadMedia = async (urlBase:string, file: any, options?:IUploadOpt
     const client = new S3Client({ region, credentials: fromEnv() });
     const key = `${urlBase}/${file.name}`;
 
+    if (!(file.data instanceof Buffer)) {
+        throw new Error("uploadMedia: file.data must be a Buffer");
+    }
+
     // Determine if file already exists
-    if(options?.failOnExist) {
+    if(options?.failOnExist || options?.skipExisting) {
         const command = new HeadObjectCommand({ Bucket, Key: key });
         try {
             const result = await client.send(command);
-            console.log(result);
+            // console.log(result);
+
+            if(options?.skipExisting) {
+                console.log(`File already exists, skipping upload: ${key}`);
+                return;
+            }
+
             throw new Error("File already exists");
         } catch(e:any) {
             if(e.name !== "NotFound") {
