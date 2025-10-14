@@ -1,6 +1,8 @@
 import { Setting } from "../common/setting/service";
-import { Client, Environment, LogLevel } from "@paypal/paypal-server-sdk";
+import { ApiError, CheckoutPaymentIntent, Client, Environment, LogLevel, OrdersController } from "@paypal/paypal-server-sdk";
+import { string } from "@paypal/paypal-server-sdk/dist/types/schema";
 import request from 'superagent';
+import { error500 } from "./express/errors";
 
 export const getPayPalClient = async () => new Client({
     clientCredentialsAuthCredentials: {
@@ -39,3 +41,78 @@ export const subscription = {
             .send({ reason: "Customer requested to cancel" });
     }
 }
+
+export declare interface IPayPalCartItem {
+    id: string;
+    name: string;
+    quantity: number;
+    unit_amount: {
+        currency_code: string;
+        value: string;
+    };
+}
+export declare type PayPalCartGenerator = () => Promise<IPayPalCartItem[]>;
+
+const getOrdersController = async () => new OrdersController(await getPayPalClient());
+
+export const createOrder = async (createCart:PayPalCartGenerator, total: number) => {
+    const collect = {
+        body: {
+            intent: CheckoutPaymentIntent.Capture,
+            cart: await createCart(),
+            purchaseUnits: [
+                {
+                    amount: {
+                        currencyCode: "USD",
+                        value: total.toString(),
+                    },
+                },
+            ],
+        },
+        prefer: "return=minimal",
+    }; 
+
+    try {
+        const controller = await getOrdersController();
+        const { body, ...httpResponse } = await controller.ordersCreate(
+            collect
+        );
+        // Get more response info...
+        // const { statusCode, headers } = httpResponse;
+        return {
+            jsonResponse: JSON.parse(body as string),
+            httpStatusCode: httpResponse.statusCode,
+        };
+    } catch (error) {
+        console.log(error);
+        if (error instanceof ApiError) {
+            // const { statusCode, headers } = error;
+            throw new Error(error.message);
+        }
+    }
+};
+
+export const captureOrder = async (transactionId: string) => {
+    const collect = {
+        id: transactionId,
+        prefer: "return=minimal",
+    };
+
+    try {
+        const controller = await getOrdersController();
+        const { body, ...httpResponse } = await controller.ordersCapture(
+            collect
+        );
+        // Get more response info...
+        // const { statusCode, headers } = httpResponse;
+        return {
+            jsonResponse: JSON.parse(body as string),
+            httpStatusCode: httpResponse.statusCode,
+        };
+    } catch (error) {
+        if (error instanceof ApiError) {
+            // const { statusCode, headers } = error;
+            throw error500(error.message);
+        }
+    }
+};
