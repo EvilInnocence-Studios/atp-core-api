@@ -131,11 +131,11 @@ export const mapKeys = (f:Func<string, string>) => (obj:Index<any>):Index<any> =
     {}
 );
 
-export const reorder = async <T extends {id: string, order: number}>(table:string, entityId: string, newIndexStr: string, where?:Index<any>) => {
+export const reorder = async <T extends {id: string, order: number}>(table:string, entityId: string, newIndexStr: string, where?:Index<any>, sortField:string = "order") => {
     const newIndex:number = parseInt(newIndexStr);
     
     // Get all items that match the where clause
-    const items:T[] = await db(table).where(where || {}).orderBy("order");
+    const items:T[] = await db(table).where(where || {}).orderBy(sortField);
 
     // Find the index of the entity to reorder
     const oldIndex = items.findIndex(item => item.id === entityId);
@@ -166,5 +166,5 @@ export const reorder = async <T extends {id: string, order: number}>(table:strin
         ];
 
     // Update the order of the items in the database
-    await Promise.all(reordered.map((item, order) => db(table).update({ order }).where({ id: item.id })));
+    await Promise.all(reordered.map((item, order) => db(table).update({ [sortField]: order }).where({ id: item.id })));
 }
