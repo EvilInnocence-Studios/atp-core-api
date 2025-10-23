@@ -4,7 +4,7 @@ import 'esm-hook';
 import express, { NextFunction, Request, Response } from "express";
 import fileUpload from 'express-fileupload';
 import { types } from 'pg';
-import { apiConfigs } from "../../apiConfig";
+import { apiConfigs } from "../../api.config";
 import { IApiConfig } from "./endpoints";
 
 const app = express();
