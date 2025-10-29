@@ -154,7 +154,7 @@ const createCloudFrontDistribution = async (): Promise<string> => {
         findManagedCachePolicyId(cloudFront, 'Managed-CachingDisabled'),
         findManagedOriginRequestPolicyId(cloudFront, 'Managed-AllViewerExceptHostHeader'),
         // Used for cached endpoints
-        findManagedCachePolicyId(cloudFront, 'Managed-CachingOptimized'),
+        findManagedCachePolicyId(cloudFront, 'Managed-CachingOptimized'), // TODO: Replace with custom policy - CacheingWithQueryStrings
     ]);
 
     const origins: Origin[] = [
@@ -192,19 +192,15 @@ const createCloudFrontDistribution = async (): Promise<string> => {
         ViewerProtocolPolicy: 'redirect-to-https',
         AllowedMethods: {
             Quantity: 2,
-            Items: ['GET', 'HEAD'],
+            Items: ['GET', 'HEAD', 'OPTIONS'],
             CachedMethods: {
                 Quantity: 2,
-                Items: ['GET', 'HEAD'],
+                Items: ['GET', 'HEAD', 'OPTIONS'],
             },
         },
         ResponseHeadersPolicyId: responseHeadersPolicyId,
-        ...(behavior.cache
-            ? { CachePolicyId: cachePolicyOptimizedId }
-            : {
-                CachePolicyId: cachePolicyDisabledId,
-                OriginRequestPolicyId: originRequestAllExceptHostId,
-            }),
+        CachePolicyId: behavior.cache ? cachePolicyOptimizedId : cachePolicyDisabledId,
+        OriginRequestPolicyId: originRequestAllExceptHostId,
     }));
 
     const distributionConfig: DistributionConfig = {
