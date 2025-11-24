@@ -44,7 +44,7 @@ Promise.all(initPromises)
     .then(() => {
         console.log("Running data initializers");
         return initModules
-            .sort((a, b) => a.priority - b.priority)
+            .sort((a, b) => a.order - b.order)
             .reduce(
                 (prevInit, curInit) => prevInit.then(curInit.initData), 
                 Promise.resolve()
