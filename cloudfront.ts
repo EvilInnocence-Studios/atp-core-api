@@ -13,7 +13,7 @@ import {
 import 'dotenv/config';
 // Add Node utils for directory scanning and dynamic import resolution
 import { fromEnv } from '@aws-sdk/credential-providers';
-import { caching } from '../../caching.config';
+import { caching } from "../../caching.config";
 
 export declare interface IBehavior {
     precedence: number;
