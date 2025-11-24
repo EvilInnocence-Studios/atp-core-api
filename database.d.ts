@@ -1,16 +1,16 @@
 export declare interface IMigration {
     down: () => Promise<any>;
     up: () => Promise<any>;
-    priority: number;
+    order: number;
     initData: () => Promise<any>;
 }
 
 export declare interface IInitializer {
-    init:IMigration;
+    init: IMigration;
 }
 
 
-export declare type Update<T extends {id: number;}> = Partial<Omit<T, "id">>;
+export declare type Update<T extends { id: number; }> = Partial<Omit<T, "id">>;
 
 export declare interface ISearchQuery {
     q: string;

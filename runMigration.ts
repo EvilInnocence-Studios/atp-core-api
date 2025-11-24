@@ -1,5 +1,6 @@
 import { config } from 'dotenv';
 import readline from "node:readline/promises";
+import { IMigration } from './dbMigrations';
 
 const chooseEnvironment = async (): Promise<"prod" | "local"> => {
     const rl = readline.createInterface({
@@ -30,20 +31,47 @@ const run = async () => {
     }
 
     const { chooseDirection, chooseMigration, confirmAction } = require("./dbMigrations");
-    const {migrations} = require("../../migrations");
+    const { migrations: rawMigrations } = require("../../migrations") as { migrations: IMigration[] };
 
-    const migration = await chooseMigration(migrations);
+    // Sort migrations by order
+    const migrations = rawMigrations.sort((a, b) => a.order - b.order);
+
+    const runAllMigration: IMigration = {
+        name: "Run All Migrations",
+        module: "system",
+        description: "Run all migrations in sequence",
+        order: 0,
+        up: async () => {
+            console.log("Starting execution of all migrations...");
+            for (const m of migrations) {
+                console.log(`Running migration: ${m.name} (${m.module})`);
+                await m.up();
+                await m.initData();
+            }
+        },
+        down: async () => {
+            console.log("Starting rollback of all migrations...");
+            for (const m of [...migrations].reverse()) {
+                console.log(`Rolling back migration: ${m.name} (${m.module})`);
+                await m.down();
+            }
+        },
+        initData: async () => {
+            // Already handled in up() for each migration
+        }
+    };
+
+    const migration = await chooseMigration([runAllMigration, ...migrations]);
     const direction = await chooseDirection();
-
 
     console.log(`You have chosen migration: ${migration.name} (${migration.module}) - ${direction} in ${environment} environment`);
     const proceed = await confirmAction('Do you want to continue? (yes/no): ');
-    if(!proceed) {
+    if (!proceed) {
         console.log('Migration cancelled');
         process.exit(0);
     }
 
-    if(direction === 'up') {
+    if (direction === 'up') {
         await migration.up();
         await migration.initData();
         console.log('Migration complete');
