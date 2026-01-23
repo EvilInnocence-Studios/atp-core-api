@@ -31,7 +31,7 @@ export const mediaService = <T>(params:{
         console.log(mediaToInsert);
         const [newMedia] = await db(dbTable)
             .insert(mediaToInsert, "*")
-            .onConflict(uniqueColumns).ignore();
+            .onConflict(uniqueColumns).merge();
 
         return newMedia;
     },
