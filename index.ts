@@ -6,6 +6,7 @@ import fileUpload from 'express-fileupload';
 import { types } from 'pg';
 import { apiConfigs } from "../../api.config";
 import { IApiConfig } from "./endpoints";
+import { initDatabase } from "./migrations/00-init";
 
 const app = express();
 
@@ -64,5 +65,8 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     console.error(err);
     res.status(500).json({ error: err.message });
 });
+
+export const migrations = [initDatabase];
+export const setupMigrations = [initDatabase];
 
 export default app;

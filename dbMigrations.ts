@@ -5,6 +5,8 @@ export declare interface IMigration {
     module: string;
     description: string;
     order: number;
+    version: string;
+    downVersion?: string;
     up: () => Promise<any>;
     down: () => Promise<any>;
     initData: () => Promise<any>;

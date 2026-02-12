@@ -1,41 +1,8 @@
-import { config } from 'dotenv';
-import readline from "node:readline/promises";
+import { chooseEnvironment, database } from './database';
 import { IMigration } from './dbMigrations';
-
-const chooseEnvironment = async (): Promise<"prod" | "local"> => {
-    // Check CLI arguments first
-    const envArg = process.argv.find(arg => arg.startsWith('--env='));
-    if (envArg) {
-        const env = envArg.split('=')[1];
-        if (env === 'prod' || env === 'local') return env;
-    }
-
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
-    const answer = await rl.question("Enter environment (prod/local): ");
-    rl.close();
-
-    if (answer.toLowerCase() === "prod") {
-        return "prod";
-    } else if (answer.toLowerCase() === "local") {
-        return "local";
-    } else {
-        throw new Error(`Invalid environment: ${answer}`);
-    }
-}
 
 const run = async () => {
     const environment = await chooseEnvironment();
-
-    // Load environment variables based on environment parameter
-    if (environment === 'prod') {
-        config({ path: '.env.prod' });
-    } else {
-        config({ path: '.env' });
-    }
 
     const { migrations: rawMigrations } = require("../../migrations") as { migrations: IMigration[] };
 
@@ -46,6 +13,7 @@ const run = async () => {
         name: "Run All Migrations",
         module: "system",
         description: "Run all migrations in sequence",
+        version: "1.0.0",
         order: 0,
         up: async () => {
             console.log("Starting execution of all migrations...");
@@ -115,6 +83,34 @@ const run = async () => {
         await migration.down();
         console.log('Rollback complete');
     }
+}
+
+export const runSingleMigration = async (migration:IMigration, direction:"up" | "down") => {
+    if (direction === 'up') {
+        await migration.up();
+        await migration.initData();
+        await updateMigrationVersion(migration.module, migration.version);
+        console.log(`${migration.name} (${migration.module}) Migration complete to version ${migration.version}`);
+    } else {
+        await migration.down();
+        await updateMigrationVersion(migration.module, migration.downVersion || "");
+        console.log(`${migration.name} (${migration.module}) Rollback complete to version ${migration.downVersion}`);
+    }    
+}
+
+export const runMigrations = async (migrations:IMigration[], direction:"up" | "down") => {
+    for (const migration of migrations.sort((a, b) => a.order - b.order)) {
+        await runSingleMigration(migration, direction);
+    }
+    console.log(`All migrations complete`);
+}
+
+const updateMigrationVersion = async (module: string, version:string) => {
+    const db = database();
+    await db
+        .insert({module, version})
+        .into("_migrations")
+        .onConflict().merge();
 }
 
 run();

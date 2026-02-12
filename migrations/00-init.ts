@@ -1,25 +1,28 @@
 // 00 - Initialize empty database
+import { database } from '../database';
 import { IMigration } from '../dbMigrations';
-import { init as commonInit } from '../../common/migrations/00-init';
-import { init as uacInit } from '../../uac/migrations/00-init';
 
-// 01 - Initialize discounts
+const db = database();
 
 export const initDatabase:IMigration = {
     name: "init",
     module: "core",
     description: "Initialize the database with common, and uac tables.",
+    version: "1.0.0",
     order: 0,
     up: async () => {
-        await uacInit.up();
-        await commonInit.up();
+        db.schema
+            .createTable("_migrations", (table) => {
+                table.string("module").notNullable();
+                table.string("version").notNullable();
+                table.primary(["module"]);
+            })
     },
     down: async () => {
-        await commonInit.down();
-        await uacInit.down();
+        db.schema
+            .dropTable("_migrations");
     },
     initData: async () => {
-        await uacInit.initData();
-        await commonInit.initData();
+        // No data to initialize
     }
 }
