@@ -22,7 +22,7 @@ const run = async () => {
 
     console.log(`\nEnvironment: ${environment}`);
     const isUnattended = process.argv.some(arg => arg === '--yes' || arg === '-y');
-    const proceed = isUnattended || await confirmAction('Do you want to run all setup migrations? (yes/no): ');
+    const proceed = isUnattended || await confirmAction('Do you want to run all setup migrations? ');
     
     if (!proceed) {
         console.log('Database setup cancelled');

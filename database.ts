@@ -7,25 +7,26 @@ import { config } from "dotenv";
 export const database = memoize(() => knex(getDbConfig() as Knex.Config), {});
 
 export const chooseEnvironment = async (): Promise<"prod" | "local"> => {
+    let answer = "";
+
     // Check CLI arguments first
     const envArg = process.argv.find(arg => arg.startsWith('--env='));
     if (envArg) {
-        const env = envArg.split('=')[1];
-        if (env === 'prod' || env === 'local') return env;
+        answer = envArg.split('=')[1];
+    } else {
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+
+        answer = await rl.question("Enter environment (prod/local): ");
+        rl.close();
     }
 
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
-    const answer = await rl.question("Enter environment (prod/local): ");
-    rl.close();
-
     if (answer.toLowerCase() === 'prod') {
-        config({ path: '.env.prod' });
+        config({ path: '.env.prod', override: true });
     } else {
-        config({ path: '.env' });
+        config({ path: '.env', override: true });
     }
 
     if (answer.toLowerCase() === "prod") {
