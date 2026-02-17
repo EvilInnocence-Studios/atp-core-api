@@ -8,6 +8,7 @@ import {
     waitUntilFunctionUpdated,
     CreateFunctionUrlConfigCommand,
     UpdateFunctionUrlConfigCommand,
+    GetFunctionUrlConfigCommand,
     FunctionUrlAuthType
 } from '@aws-sdk/client-lambda';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
@@ -22,7 +23,7 @@ export const uploadToLambda = async (
     envFilePath: string,
     S3Bucket: string,
     S3Key: string,
-): Promise<void> => {
+): Promise<string> => {
     const region = process.env.AWS_REGION || 'us-east-1';
     const lambda = new LambdaClient({ region });
     const s3 = new S3Client({ region });
@@ -135,5 +136,15 @@ export const uploadToLambda = async (
         }
     } else {
         console.warn(`Environment file .env.prod not found. Skipping environment variable update.`);
+    }
+
+    // Capture and return the function URL
+    try {
+        const { FunctionUrl } = await lambda.send(new GetFunctionUrlConfigCommand({ FunctionName }));
+        if (!FunctionUrl) throw new Error("Function URL not found after deployment");
+        return FunctionUrl;
+    } catch (urlError: any) {
+        console.error(`Error retrieving Lambda function URL: ${urlError.message}`);
+        throw urlError;
     }
 }
