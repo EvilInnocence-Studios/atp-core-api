@@ -12,12 +12,7 @@ import {
 } from '@aws-sdk/client-lambda';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import fs from 'fs';
-import path from 'path';
 import { loadEnv } from './loadEnv';
-import { fromEnv } from '@aws-sdk/credential-providers';
-
-const lambda = new LambdaClient({ region: 'us-east-1', credentials: fromEnv()});
-const s3 = new S3Client({ region: 'us-east-1', credentials: fromEnv()});
 
 export const uploadToLambda = async (
     zipFilePath: string,
@@ -28,6 +23,10 @@ export const uploadToLambda = async (
     S3Bucket: string,
     S3Key: string,
 ): Promise<void> => {
+    const region = process.env.AWS_REGION || 'us-east-1';
+    const lambda = new LambdaClient({ region });
+    const s3 = new S3Client({ region });
+
     const ZipFile = fs.readFileSync(zipFilePath);
 
     // Upload the zip file to S3
