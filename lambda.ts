@@ -41,7 +41,7 @@ export const uploadToLambda = async (
         console.log(`Zip file uploaded to S3 bucket ${S3Bucket} with key ${S3Key}.`);
     } catch (s3Error:any) {
         console.error(`Error uploading zip file to S3: ${s3Error.message}`);
-        return;
+        throw s3Error;
     }
 
     const params = {
@@ -71,9 +71,11 @@ export const uploadToLambda = async (
                 console.log(`Lambda function ${FunctionName} created successfully.`);
             } catch (createError:any) {
                 console.error(`Error creating Lambda function: ${createError.message}`);
+                throw createError;
             }
         } else {
             console.error(`Error updating Lambda function: ${error.message}`);
+            throw error;
         }
     }
 
@@ -107,9 +109,11 @@ export const uploadToLambda = async (
                 console.log(`Lambda function URL for ${FunctionName} updated successfully.`);
             } catch (updateUrlError: any) {
                 console.error(`Error updating Lambda function URL: ${updateUrlError.message}`);
+                throw updateUrlError;
             }
         } else {
             console.error(`Error creating Lambda function URL: ${urlError.message}`);
+            throw urlError;
         }
     }
 
@@ -128,6 +132,7 @@ export const uploadToLambda = async (
             console.log(`Environment variables for Lambda function ${FunctionName} updated successfully.`);
         } catch (envError:any) {
             console.error(`Error updating environment variables for Lambda function: ${envError.message}`);
+            throw envError;
         }
     } else {
         console.warn(`Environment file .env.prod not found. Skipping environment variable update.`);
