@@ -27,7 +27,7 @@ export const uploadToLambda = async (
     envFilePath: string,
     S3Bucket: string,
     S3Key: string,
-): Promise<void> => {
+): Promise<string | undefined> => {
     const ZipFile = fs.readFileSync(zipFilePath);
 
     // Upload the zip file to S3
@@ -130,6 +130,18 @@ export const uploadToLambda = async (
             console.error(`Error updating environment variables for Lambda function: ${envError.message}`);
         }
     } else {
-        console.warn(`Environment file .env.prod not found. Skipping environment variable update.`);
     }
+
+    try {
+        console.log("Fetching Lambda function URL...");
+        const { GetFunctionUrlConfigCommand } = await import('@aws-sdk/client-lambda');
+        const urlConfig = await lambda.send(new GetFunctionUrlConfigCommand({ FunctionName }));
+        if (urlConfig.FunctionUrl) {
+            console.log(`LAMBDA_URL=${urlConfig.FunctionUrl}`);
+            return urlConfig.FunctionUrl;
+        }
+    } catch (err: any) {
+        console.error(`Error fetching Lambda function URL: ${err.message}`);
+    }
+    return undefined;
 }

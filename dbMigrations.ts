@@ -4,6 +4,7 @@ export declare interface IMigration {
     name: string;
     module: string;
     description: string;
+    version: number;
     order: number;
     up: () => Promise<any>;
     down: () => Promise<any>;

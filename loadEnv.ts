@@ -6,7 +6,7 @@ export const loadEnv = (envFile:string):Index<string> => fs.readFileSync(envFile
     .filter(line => line.trim() !== '' && !line.startsWith('#'))
     .reduce((acc, line) => {
         const [key, value] = line.split('=');
-        if(['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'].includes(key.trim())) {
+        if(['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_REGION', 'AWS_DEFAULT_REGION'].includes(key.trim())) {
             return acc;
         }
         acc[key.trim()] = value.trim();

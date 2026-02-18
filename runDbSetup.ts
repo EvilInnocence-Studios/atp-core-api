@@ -45,6 +45,9 @@ const run = async () => {
         process.exit(0);
     }
 
+    // Sort migrations by order
+    setupMigrations.sort((a, b) => a.order - b.order);
+
     console.log(`Found ${setupMigrations.length} setup migrations:`);
     setupMigrations.forEach((m, i) => {
         console.log(`${i + 1}. ${m.name} (${m.module}) - ${m.description}`);

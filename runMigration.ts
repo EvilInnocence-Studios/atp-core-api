@@ -46,6 +46,7 @@ const run = async () => {
         name: "Run All Migrations",
         module: "system",
         description: "Run all migrations in sequence",
+        version: -1,
         order: 0,
         up: async () => {
             console.log("Starting execution of all migrations...");

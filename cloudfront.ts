@@ -242,11 +242,16 @@ const createCloudFrontDistribution = async (): Promise<string> => {
 
     const response = await cloudFront.send(command);
 
-    if (!response.Distribution || !response.Distribution.DomainName) {
+    if (!response.Distribution || !response.Distribution.Id) {
         throw new Error('Failed to create CloudFront distribution');
     }
 
-    return response.Distribution.DomainName;
+    return response.Distribution.Id;
 };
 
-createCloudFrontDistribution();
+createCloudFrontDistribution().then(id => {
+    console.log(`DISTRIBUTION_ID=${id}`);
+}).catch(err => {
+    console.error(err);
+    process.exit(1);
+});
