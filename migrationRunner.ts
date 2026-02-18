@@ -42,18 +42,18 @@ export class MigrationRunner {
             }
 
             const status = statusMap.get(m.module)!;
-            if (m.version > status.latestVersion) {
-                status.latestVersion = m.version;
-            }
+            // if (m.version > status.latestVersion) {
+            //     status.latestVersion = m.version;
+            // }
 
-            const isApplied = applied.some(a => a.module === m.module && a.version === m.version);
-            if (isApplied) {
-                if (m.version > status.currentVersion) {
-                    status.currentVersion = m.version;
-                }
-            } else {
-                status.pendingCount++;
-            }
+            // const isApplied = applied.some(a => a.module === m.module && a.version === m.version);
+            // if (isApplied) {
+            //     if (m.version > status.currentVersion) {
+            //         status.currentVersion = m.version;
+            //     }
+            // } else {
+            //     status.pendingCount++;
+            // }
         });
 
         return Array.from(statusMap.values());
@@ -64,12 +64,12 @@ export class MigrationRunner {
         const applied = await this.db('_migrations').select('module', 'version');
         
         // Sort migrations by version and module (ideally module dependencies should be considered)
-        const pending = migrations.filter(m => 
-            !applied.some(a => a.module === m.module && a.version === m.version)
-        ).sort((a, b) => {
-            if (a.module !== b.module) return a.module.localeCompare(b.module);
-            return a.version - b.version;
-        });
+        const pending = migrations //.filter(m => 
+        //     !applied.some(a => a.module === m.module && a.version === m.version)
+        // ).sort((a, b) => {
+        //     if (a.module !== b.module) return a.module.localeCompare(b.module);
+        //     return a.version - b.version;
+        // });
 
         for (const m of pending) {
             console.log(`Applying migration: ${m.module} v${m.version} - ${m.name}`);
