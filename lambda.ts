@@ -8,16 +8,12 @@ import {
     waitUntilFunctionUpdated,
     CreateFunctionUrlConfigCommand,
     UpdateFunctionUrlConfigCommand,
+    GetFunctionUrlConfigCommand,
     FunctionUrlAuthType
 } from '@aws-sdk/client-lambda';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import fs from 'fs';
-import path from 'path';
 import { loadEnv } from './loadEnv';
-import { fromEnv } from '@aws-sdk/credential-providers';
-
-const lambda = new LambdaClient({ region: 'us-east-1', credentials: fromEnv()});
-const s3 = new S3Client({ region: 'us-east-1', credentials: fromEnv()});
 
 export const uploadToLambda = async (
     zipFilePath: string,
@@ -27,7 +23,11 @@ export const uploadToLambda = async (
     envFilePath: string,
     S3Bucket: string,
     S3Key: string,
-): Promise<string | undefined> => {
+): Promise<string> => {
+    const region = process.env.AWS_REGION || 'us-east-1';
+    const lambda = new LambdaClient({ region });
+    const s3 = new S3Client({ region });
+
     const ZipFile = fs.readFileSync(zipFilePath);
 
     // Upload the zip file to S3
@@ -41,7 +41,7 @@ export const uploadToLambda = async (
         console.log(`Zip file uploaded to S3 bucket ${S3Bucket} with key ${S3Key}.`);
     } catch (s3Error:any) {
         console.error(`Error uploading zip file to S3: ${s3Error.message}`);
-        return;
+        throw s3Error;
     }
 
     const params = {
@@ -71,9 +71,11 @@ export const uploadToLambda = async (
                 console.log(`Lambda function ${FunctionName} created successfully.`);
             } catch (createError:any) {
                 console.error(`Error creating Lambda function: ${createError.message}`);
+                throw createError;
             }
         } else {
             console.error(`Error updating Lambda function: ${error.message}`);
+            throw error;
         }
     }
 
@@ -107,9 +109,11 @@ export const uploadToLambda = async (
                 console.log(`Lambda function URL for ${FunctionName} updated successfully.`);
             } catch (updateUrlError: any) {
                 console.error(`Error updating Lambda function URL: ${updateUrlError.message}`);
+                throw updateUrlError;
             }
         } else {
             console.error(`Error creating Lambda function URL: ${urlError.message}`);
+            throw urlError;
         }
     }
 
@@ -128,20 +132,18 @@ export const uploadToLambda = async (
             console.log(`Environment variables for Lambda function ${FunctionName} updated successfully.`);
         } catch (envError:any) {
             console.error(`Error updating environment variables for Lambda function: ${envError.message}`);
+            throw envError;
         }
     } else {
     }
 
+    // Capture and return the function URL
     try {
-        console.log("Fetching Lambda function URL...");
-        const { GetFunctionUrlConfigCommand } = await import('@aws-sdk/client-lambda');
-        const urlConfig = await lambda.send(new GetFunctionUrlConfigCommand({ FunctionName }));
-        if (urlConfig.FunctionUrl) {
-            console.log(`LAMBDA_URL=${urlConfig.FunctionUrl}`);
-            return urlConfig.FunctionUrl;
-        }
-    } catch (err: any) {
-        console.error(`Error fetching Lambda function URL: ${err.message}`);
+        const { FunctionUrl } = await lambda.send(new GetFunctionUrlConfigCommand({ FunctionName }));
+        if (!FunctionUrl) throw new Error("Function URL not found after deployment");
+        return FunctionUrl;
+    } catch (urlError: any) {
+        console.error(`Error retrieving Lambda function URL: ${urlError.message}`);
+        throw urlError;
     }
-    return undefined;
 }

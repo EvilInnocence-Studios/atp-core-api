@@ -1,21 +1,26 @@
 // 00 - Initialize empty database
+import { database } from '../database';
 import { IMigration } from '../dbMigrations';
 
-// 01 - Initialize discounts
+const db = database();
 
 export const initDatabase:IMigration = {
     name: "init",
     module: "core",
-    description: "Initialize the database with the _migrations table.",
-    version: 0,
+    description: "Initialize the core database functionality",
+    version: "1.0.0",
     order: 0,
-    up: async () => {
-        
-    },
-    down: async () => {
-        
-    },
+    up: async () => 
+        db.schema
+            .createTable("_migrations", (table) => {
+                table.string("module").notNullable();
+                table.string("version").notNullable();
+                table.primary(["module"]);
+            }),
+    down: async () => 
+        db.schema
+            .dropTable("_migrations"),
     initData: async () => {
-        
+        // No data to initialize
     }
 }

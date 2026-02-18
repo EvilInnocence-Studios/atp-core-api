@@ -1,41 +1,8 @@
-import { config } from 'dotenv';
-import readline from "node:readline/promises";
+import { chooseEnvironment } from './database';
 import { IMigration } from './dbMigrations';
-
-const chooseEnvironment = async (): Promise<"prod" | "local"> => {
-    // Check CLI arguments first
-    const envArg = process.argv.find(arg => arg.startsWith('--env='));
-    if (envArg) {
-        const env = envArg.split('=')[1];
-        if (env === 'prod' || env === 'local') return env;
-    }
-
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
-    const answer = await rl.question("Enter environment (prod/local): ");
-    rl.close();
-
-    if (answer.toLowerCase() === "prod") {
-        return "prod";
-    } else if (answer.toLowerCase() === "local") {
-        return "local";
-    } else {
-        throw new Error(`Invalid environment: ${answer}`);
-    }
-}
 
 const run = async () => {
     const environment = await chooseEnvironment();
-
-    // Load environment variables based on environment parameter
-    if (environment === 'prod') {
-        config({ path: '.env.prod' });
-    } else {
-        config({ path: '.env' });
-    }
 
     const { confirmAction } = require("./dbMigrations");
     const { setupMigrations } = require("../../api.config") as { setupMigrations: IMigration[] };
@@ -55,7 +22,7 @@ const run = async () => {
 
     console.log(`\nEnvironment: ${environment}`);
     const isUnattended = process.argv.some(arg => arg === '--yes' || arg === '-y');
-    const proceed = isUnattended || await confirmAction('Do you want to run all setup migrations? (yes/no): ');
+    const proceed = isUnattended || await confirmAction('Do you want to run all setup migrations? ');
     
     if (!proceed) {
         console.log('Database setup cancelled');
