@@ -4,7 +4,6 @@ export declare interface IMigration {
     name: string;
     module: string;
     description: string;
-    version: number;
     order: number;
     version: string;
     downVersion?: string;
