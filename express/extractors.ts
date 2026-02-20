@@ -32,7 +32,7 @@ export const getLoggedInUser = async (args:any[]):Promise<string | null> => {
         userId = publicUser.id;
     } else {
         // Get the user id from the login token
-        userId = (jwt.verify(token, secret) as jwt.JwtPayload).userId;
+        userId = (jwt.verify(token, secret()) as jwt.JwtPayload).userId;
     }
     return userId;
 }
