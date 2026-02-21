@@ -9,7 +9,8 @@ import {
     CreateFunctionUrlConfigCommand,
     UpdateFunctionUrlConfigCommand,
     GetFunctionUrlConfigCommand,
-    FunctionUrlAuthType
+    FunctionUrlAuthType,
+    AddPermissionCommand,
 } from '@aws-sdk/client-lambda';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import fs from 'fs';
@@ -114,6 +115,26 @@ export const uploadToLambda = async (
         } else {
             console.error(`Error creating Lambda function URL: ${urlError.message}`);
             throw urlError;
+        }
+    }
+
+    // Add public access permission to the Function URL
+    try {
+        console.log(`Adding public access permission to Lambda function URL for ${FunctionName}`);
+        await lambda.send(new AddPermissionCommand({
+            FunctionName,
+            StatementId: 'FunctionURLAllowPublicAccess',
+            Action: 'lambda:InvokeFunctionUrl',
+            Principal: '*',
+            FunctionUrlAuthType: FunctionUrlAuthType.NONE,
+        }));
+        console.log(`Public access permission added to Lambda function URL for ${FunctionName}.`);
+    } catch (permissionError: any) {
+        if (permissionError.name === 'ResourceConflictException') {
+            console.log(`Public access permission already exists for ${FunctionName}.`);
+        } else {
+            console.error(`Error adding public access permission to Lambda function URL: ${permissionError.message}`);
+            throw permissionError;
         }
     }
 
