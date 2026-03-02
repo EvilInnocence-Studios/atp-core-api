@@ -15,8 +15,11 @@ app.use(express.json());
 // Middleware for uploading files
 app.use(fileUpload());
 
+// Make sure we can get the IP address
+app.set('trust proxy', true);
+
 // Global CORS Middleware
-if(process.env.ENV === 'local') {
+if (process.env.ENV === 'local') {
     app.use((req, res, next) => {
         res.header('Access-Control-Allow-Origin', '*'); // Replace '*' with specific allowed origin(s) in production
         res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS'); // Allowed methods
@@ -30,7 +33,7 @@ if(process.env.ENV === 'local') {
 }
 
 // Make sure decimal columns are parsed as floats
-types.setTypeParser(1700, function(val) {
+types.setTypeParser(1700, function (val) {
     return parseFloat(val);
 });
 
@@ -46,7 +49,7 @@ function registerRoutes(config: IApiConfig, basePath = "") {
                 (app as any)[method](fullPath, handlerOrSubConfig as express.RequestHandler);
             } else if (typeof handlerOrSubConfig === "object") {
                 // Handle nested sub-route
-                registerRoutes({[key]: handlerOrSubConfig} as IApiConfig, fullPath);
+                registerRoutes({ [key]: handlerOrSubConfig } as IApiConfig, fullPath);
             }
         });
     });
