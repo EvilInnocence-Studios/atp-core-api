@@ -15,19 +15,19 @@ const run = async () => {
         description: "Run all migrations in sequence",
         version: "1.0.0",
         order: 0,
-        up: async () => {
+        up: async (params?: Record<string, string>) => {
             console.log("Starting execution of all migrations...");
             for (const m of migrations) {
                 console.log(`Running migration: ${m.name} (${m.module})`);
-                await m.up();
-                await m.initData();
+                await m.up(params);
+                await m.initData(params);
             }
         },
-        down: async () => {
+        down: async (params?: Record<string, string>) => {
             console.log("Starting rollback of all migrations...");
             for (const m of [...migrations].reverse()) {
                 console.log(`Rolling back migration: ${m.name} (${m.module})`);
-                await m.down();
+                await m.down(params);
             }
         },
         initData: async () => {
@@ -67,7 +67,32 @@ const run = async () => {
     
     // Check CLI for confirmation
     const isUnattended = process.argv.some(arg => arg === '--yes' || arg === '-y');
-    const { confirmAction } = require("./dbMigrations");
+    const { confirmAction, askParameter } = require("./dbMigrations");
+
+    // Gather parameters
+    const params: Record<string, string> = {};
+    const migrationsToRun = migration === runAllMigration ? migrations : [migration];
+    const requiredParams = new Map<string, string>(); // name -> description
+
+    for (const m of migrationsToRun) {
+        if (m.parameters) {
+            for (const p of m.parameters) {
+                if (!requiredParams.has(p.name)) {
+                    requiredParams.set(p.name, p.description);
+                }
+            }
+        }
+    }
+
+    for (const [name, description] of requiredParams.entries()) {
+        const cliArg = process.argv.find(arg => arg.startsWith(`--${name}=`));
+        if (cliArg) {
+            params[name] = cliArg.substring(cliArg.indexOf('=') + 1);
+        } else {
+            params[name] = await askParameter(name, description);
+        }
+    }
+
     const proceed = isUnattended || await confirmAction('Do you want to continue?');
     
     if (!proceed) {
@@ -76,31 +101,31 @@ const run = async () => {
     }
 
     if (direction === 'up') {
-        await migration.up();
-        await migration.initData();
+        await migration.up(params);
+        await migration.initData(params);
         console.log('Migration complete');
     } else {
-        await migration.down();
+        await migration.down(params);
         console.log('Rollback complete');
     }
 }
 
-export const runSingleMigration = async (migration:IMigration, direction:"up" | "down") => {
+export const runSingleMigration = async (migration:IMigration, direction:"up" | "down", params?: Record<string, string>) => {
     if (direction === 'up') {
-        await migration.up();
-        await migration.initData();
+        await migration.up(params);
+        await migration.initData(params);
         await updateMigrationVersion(migration.module, migration.version);
         console.log(`${migration.name} (${migration.module}) Migration complete to version ${migration.version}`);
     } else {
-        await migration.down();
+        await migration.down(params);
         await updateMigrationVersion(migration.module, migration.downVersion || "");
         console.log(`${migration.name} (${migration.module}) Rollback complete to version ${migration.downVersion}`);
     }    
 }
 
-export const runMigrations = async (migrations:IMigration[], direction:"up" | "down") => {
+export const runMigrations = async (migrations:IMigration[], direction:"up" | "down", params?: Record<string, string>) => {
     for (const migration of migrations.sort((a, b) => a.order - b.order)) {
-        await runSingleMigration(migration, direction);
+        await runSingleMigration(migration, direction, params);
     }
     console.log(`All migrations complete`);
 }

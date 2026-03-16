@@ -1,5 +1,10 @@
 import readline from "node:readline/promises";
 
+export declare interface IMigrationParameter {
+    name: string;
+    description: string;
+}
+
 export declare interface IMigration {
     name: string;
     module: string;
@@ -7,9 +12,10 @@ export declare interface IMigration {
     order: number;
     version: string;
     downVersion?: string;
-    up: () => Promise<any>;
-    down: () => Promise<any>;
-    initData: () => Promise<any>;
+    parameters?: IMigrationParameter[];
+    up: (params?: Record<string, string>) => Promise<any>;
+    down: (params?: Record<string, string>) => Promise<any>;
+    initData: (params?: Record<string, string>) => Promise<any>;
 };
 
 // Show the user a list of migrations and allow them to choose one via arrow keys, index, or id
@@ -68,4 +74,16 @@ export const confirmAction = async (message: string): Promise<boolean> => {
     rl.close();
 
     return answer.toLowerCase() === "yes";
+}
+
+export const askParameter = async (name: string, description: string): Promise<string> => {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    const answer = await rl.question(`Enter value for ${name}: (${description}): `);
+    rl.close();
+
+    return answer;
 }
