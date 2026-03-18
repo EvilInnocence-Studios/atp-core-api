@@ -66,6 +66,7 @@ export const uploadToLambda = async (
                     Runtime: Runtime.nodejs22x,
                     Code: { S3Bucket, S3Key },
                     Timeout: 30, // Set timeout to 30 seconds
+                    MemorySize: 512, // Set memory size to 512MB by default
                 };
 
                 await lambda.send(new CreateFunctionCommand(createParams));
@@ -138,24 +139,38 @@ export const uploadToLambda = async (
         }
     }
 
-    // Update the environment variables for the Lambda function
+    // Update the configuration and environment variables for the Lambda function
     if (fs.existsSync(envFilePath)) {
-        const updateEnvParams = {
+        const updateConfigParams = {
             FunctionName,
             Environment: {
                 Variables: loadEnv(envFilePath),
             },
             Timeout: 30, // Set timeout to 30 seconds
+            MemorySize: 512, // Set memory size to 512MB by default
         };
 
         try {
-            await lambda.send(new UpdateFunctionConfigurationCommand(updateEnvParams));
-            console.log(`Environment variables for Lambda function ${FunctionName} updated successfully.`);
+            await lambda.send(new UpdateFunctionConfigurationCommand(updateConfigParams));
+            console.log(`Configuration and environment variables for Lambda function ${FunctionName} updated successfully.`);
         } catch (envError:any) {
-            console.error(`Error updating environment variables for Lambda function: ${envError.message}`);
+            console.error(`Error updating configuration for Lambda function: ${envError.message}`);
             throw envError;
         }
     } else {
+        const updateConfigParams = {
+            FunctionName,
+            Timeout: 30, // Set timeout to 30 seconds
+            MemorySize: 512, // Set memory size to 512MB by default
+        };
+
+        try {
+            await lambda.send(new UpdateFunctionConfigurationCommand(updateConfigParams));
+            console.log(`Configuration for Lambda function ${FunctionName} updated successfully.`);
+        } catch (configError:any) {
+            console.error(`Error updating configuration for Lambda function: ${configError.message}`);
+            throw configError;
+        }
     }
 
     // Capture and return the function URL

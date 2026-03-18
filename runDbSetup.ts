@@ -4,7 +4,7 @@ import { IMigration } from './dbMigrations';
 const run = async () => {
     const environment = await chooseEnvironment();
 
-    const { confirmAction } = require("./dbMigrations");
+    const { confirmAction, gatherParameters } = require("./dbMigrations");
     const { setupMigrations } = require("../../api.config") as { setupMigrations: IMigration[] };
 
     if (!setupMigrations || setupMigrations.length === 0) {
@@ -21,6 +21,10 @@ const run = async () => {
     });
 
     console.log(`\nEnvironment: ${environment}`);
+    
+    // Gather parameters
+    const params = await gatherParameters(setupMigrations);
+
     const isUnattended = process.argv.some(arg => arg === '--yes' || arg === '-y');
     const proceed = isUnattended || await confirmAction('Do you want to run all setup migrations? ');
     
@@ -33,8 +37,8 @@ const run = async () => {
     for (const m of setupMigrations) {
         console.log(`\nRunning: ${m.name} (${m.module})`);
         try {
-            await m.up();
-            await m.initData();
+            await m.up(params);
+            await m.initData(params);
             console.log(`Success: ${m.name}`);
         } catch (error) {
             console.error(`Error running migration ${m.name}:`, error);

@@ -70,28 +70,9 @@ const run = async () => {
     const { confirmAction, askParameter } = require("./dbMigrations");
 
     // Gather parameters
-    const params: Record<string, string> = {};
     const migrationsToRun = migration === runAllMigration ? migrations : [migration];
-    const requiredParams = new Map<string, string>(); // name -> description
-
-    for (const m of migrationsToRun) {
-        if (m.parameters) {
-            for (const p of m.parameters) {
-                if (!requiredParams.has(p.name)) {
-                    requiredParams.set(p.name, p.description);
-                }
-            }
-        }
-    }
-
-    for (const [name, description] of requiredParams.entries()) {
-        const cliArg = process.argv.find(arg => arg.startsWith(`--${name}=`));
-        if (cliArg) {
-            params[name] = cliArg.substring(cliArg.indexOf('=') + 1);
-        } else {
-            params[name] = await askParameter(name, description);
-        }
-    }
+    const { gatherParameters } = require('./dbMigrations');
+    const params = await gatherParameters(migrationsToRun);
 
     const proceed = isUnattended || await confirmAction('Do you want to continue?');
     

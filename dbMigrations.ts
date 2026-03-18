@@ -87,3 +87,29 @@ export const askParameter = async (name: string, description: string): Promise<s
 
     return answer;
 }
+
+export const gatherParameters = async (migrationsToRun: IMigration[]): Promise<Record<string, string>> => {
+    const params: Record<string, string> = {};
+    const requiredParams = new Map<string, string>(); // name -> description
+
+    for (const m of migrationsToRun) {
+        if (m.parameters) {
+            for (const p of m.parameters) {
+                if (!requiredParams.has(p.name)) {
+                    requiredParams.set(p.name, p.description);
+                }
+            }
+        }
+    }
+
+    for (const [name, description] of requiredParams.entries()) {
+        const cliArg = process.argv.find(arg => arg.startsWith(`--${name}=`));
+        if (cliArg) {
+            params[name] = cliArg.substring(cliArg.indexOf('=') + 1);
+        } else {
+            params[name] = await askParameter(name, description);
+        }
+    }
+
+    return params;
+}
