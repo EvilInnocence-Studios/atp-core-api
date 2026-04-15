@@ -75,6 +75,7 @@ export const uploadMedia = async (urlBase:string, file: any, options?:IUploadOpt
         Key: key,
         Body: file.data,
         ACL: "public-read",
+        ContentType: file.mimetype,
     });
     await client.send(command);
     console.log(`File uploaded successfully: ${key}`);
