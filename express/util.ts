@@ -3,7 +3,7 @@ import { map, objFilter } from "ts-functional";
 import { Func, Index } from "ts-functional/dist/types";
 import { NewObj, Query, QueryArrayValue, QuerySingleValue, QueryValue } from "../../core-shared/express/types";
 import { database } from "../database";
-import { error500 } from "./errors";
+import { error409, error500 } from "./errors";
 
 const db = database();
 
@@ -131,9 +131,32 @@ export const mapKeys = (f:Func<string, string>) => (obj:Index<any>):Index<any> =
     {}
 );
 
-export const reorder = async <T extends {id: string, order: number}>(table:string, entityId: string, newIndexStr: string, where?:Index<any>, sortField:string = "order") => {
+export const reorder = async <T extends {id: string, order: number}>(table:string, entityId: string, newIndexStr: string, where?:Index<any>, sortField:string = "order", parentField?: string) => {
     const newIndex:number = parseInt(newIndexStr);
     
+    if (where) {
+        if (parentField && where[parentField]) {
+            let currentParentCheck = where[parentField];
+            while (currentParentCheck && currentParentCheck !== 'null') {
+                if (currentParentCheck === entityId) {
+                    throw error409("Cannot move an entity inside itself or its descendants.");
+                }
+                const parentEntity = await db(table).where({ id: currentParentCheck }).first();
+                currentParentCheck = parentEntity ? parentEntity[parentField] : null;
+            }
+        }
+
+        // Enforce entity is in the target group before sorting
+        const currentEntity = await db(table).where({ id: entityId }).first();
+        if (!currentEntity) {
+            throw error500(`Entity with id ${entityId} not found in table ${table}`);
+        }
+        const needsMove = Object.keys(where).some(key => currentEntity[key] !== where[key]);
+        if (needsMove) {
+            await db(table).update({ ...where, [sortField]: 999999 }).where({ id: entityId });
+        }
+    }
+
     // Get all items that match the where clause
     const items:T[] = await db(table).where(where || {}).orderBy(sortField);
 
