@@ -121,7 +121,16 @@ export const update = <
     .where({ id })
     .then(() => loadById<Entity, ReturnedEntity>(table, afterLoad)(id));
 
-export const remove = (table:string) => (id:string):Promise<any> => db.delete().from(table).where({ id });
+export const remove = <Entity extends {id: string}>(
+    table:string,
+    beforeRemove:Func<Entity, Promise<any>> = () => Promise.resolve(),
+    afterRemove:Func<Entity, Promise<any>> = () => Promise.resolve(),
+) => async (id:string):Promise<any> => {
+    const entity = await loadById<Entity>(table)(id);
+    await beforeRemove(entity);
+    await db.delete().from(table).where({ id });
+    await afterRemove(entity);
+}
 
 export const mapKeys = (f:Func<string, string>) => (obj:Index<any>):Index<any> => Object.keys(obj).reduce(
     (all:Index<any>, key:string) => {

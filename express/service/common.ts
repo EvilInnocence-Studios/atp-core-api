@@ -9,8 +9,10 @@ const db = database();
 const defaultCrudHooks = {
     afterLoad: transform,
     beforeCreate: transform,
+    afterCreate: () => Promise.resolve(),
     beforeUpdate: transform,
-    afterCreate: () => {},
+    beforeRemove: () => Promise.resolve(),
+    afterRemove: () => Promise.resolve(),
 }
 
 export const basicCrudService = <
@@ -23,11 +25,13 @@ export const basicCrudService = <
     hooks: Partial<{
         afterLoad: Func<Entity, ReturnedEntity>;
         beforeCreate: Func<NewEntity, NewObj<Entity>>;
-        beforeUpdate: Func<EntityUpdate, Partial<Entity>>;
         afterCreate: Func<Entity, void>;
+        beforeUpdate: Func<EntityUpdate, Partial<Entity>>;
+        beforeRemove: Func<Entity, Promise<any>>;
+        afterRemove: Func<Entity, Promise<any>>;
     }> = {},
 ) => {
-    const { afterLoad, beforeCreate, beforeUpdate, afterCreate } = { ...defaultCrudHooks, ...hooks };
+    const { afterLoad, beforeCreate, beforeUpdate, afterCreate, beforeRemove, afterRemove } = { ...defaultCrudHooks, ...hooks };
 
     return {
         create:            create<Entity, NewEntity, ReturnedEntity>(table, nameField, beforeCreate, afterLoad, afterCreate),
@@ -37,7 +41,7 @@ export const basicCrudService = <
         loadBy:            (field:string) => loadBy<Entity, ReturnedEntity>(field, table, afterLoad),
         loadByInsensitive: (field:string) => loadByInsensitive<Entity, ReturnedEntity>(field, table, afterLoad),
         update:            update<Entity, EntityUpdate, ReturnedEntity>(table, beforeUpdate, afterLoad),
-        remove:            remove(table),
+        remove:            remove(table, beforeRemove, afterRemove),
     };
 }
 
