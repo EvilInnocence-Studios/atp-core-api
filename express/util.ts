@@ -107,6 +107,19 @@ export const loadByInsensitive = <T, R = T>(field:string, table:string, afterLoa
         .then(afterLoad);
 }
 
+const fieldRegistry:Index<string[]> = {};
+export const FieldRegistry = {
+    register: (entity: string, fields: string[]) => {
+        fieldRegistry[entity] = fieldRegistry[entity].concat(fields);
+    },
+    get: (entity: string): string[] => fieldRegistry[entity] || [],
+    filter: <Entity extends {id: string}>(entity: string) => (obj: Partial<Entity>): Partial<Entity> => {
+        return objFilter(
+            (_: any, key: string) => fieldRegistry[entity].includes(key)
+        )(obj) as Partial<Entity>;
+    }
+}
+
 export const update = <
     Entity extends {id: string},
     EntityUpdate = Partial<Entity>,
@@ -115,11 +128,26 @@ export const update = <
     table:string,
     beforeUpdate:Func<EntityUpdate, Partial<Entity>> = transform,
     afterLoad: Func<Entity, ReturnedEntity> = transform,
-) => (id:string, updated:EntityUpdate):Promise<ReturnedEntity> => db
-    .update(beforeUpdate(updated))
-    .into(table)
-    .where({ id })
-    .then(() => loadById<Entity, ReturnedEntity>(table, afterLoad)(id));
+) => (id:string, updated:EntityUpdate):Promise<ReturnedEntity> => {
+    const filtered = FieldRegistry.filter<Entity>(table)(updated as Partial<Entity>);
+
+    // Log a console warning if disallowed fields are removed
+    const disallowedFields = Object.keys(updated as any).filter(key => !(filtered as any)[key]);
+    if (disallowedFields.length > 0) {
+        console.warn(`[${table}] Removed fields: ${disallowedFields.join(", ")}`);
+    }
+
+    // Don't update if no fields are allowed
+    if (Object.keys(filtered).length === 0) {
+        return loadById<Entity, ReturnedEntity>(table, afterLoad)(id);
+    }
+
+    return db
+        .update(beforeUpdate(filtered as EntityUpdate))
+        .into(table)
+        .where({ id })
+        .then(() => loadById<Entity, ReturnedEntity>(table, afterLoad)(id));
+}
 
 export const remove = <Entity extends {id: string}>(
     table:string,
