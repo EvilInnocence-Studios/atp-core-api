@@ -24,9 +24,9 @@ export const basicCrudService = <
     table:string, nameField:string = "name",
     hooks: Partial<{
         afterLoad: Func<Entity, ReturnedEntity>;
-        beforeCreate: Func<NewEntity, NewObj<Entity>>;
+        beforeCreate: (obj: NewEntity) => NewObj<Entity> | Promise<NewObj<Entity>>;
         afterCreate: Func<Entity, void>;
-        beforeUpdate: Func<EntityUpdate, Partial<Entity>>;
+        beforeUpdate: (obj: EntityUpdate) => Partial<Entity> | Promise<Partial<Entity>>;
         beforeRemove: Func<Entity, Promise<any>>;
         afterRemove: Func<Entity, Promise<any>>;
     }> = {},

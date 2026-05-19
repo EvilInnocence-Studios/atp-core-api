@@ -27,19 +27,39 @@ export const parseNestedQuery = (query:any) => Object.keys(query)
 
 export const transform = <T, R>(obj:T) => obj as unknown as R;
 
+const fieldRegistry:Index<Index<string[]>> = {};
+export const FieldRegistry = {
+    register: (entity: string, fields: {create: string[], update: string[]}) => {
+        fieldRegistry[entity].create = (fieldRegistry[entity].create || []).concat(fields.create);
+        fieldRegistry[entity].update = (fieldRegistry[entity].update || []).concat(fields.update);
+    },
+    filterCreate: (entity: string) => (obj: any): any => {
+        return objFilter(
+            (_: any, key: string) => fieldRegistry[entity].create.includes(key)
+        )(obj);
+    },
+    filterUpdate: <Entity extends {id: string}>(entity: string) => (obj: Partial<Entity>): Partial<Entity> => {
+        return objFilter(
+            (_: any, key: string) => fieldRegistry[entity].update.includes(key)
+        )(obj) as Partial<Entity>;
+    }
+}
+
 export const create = <
     Entity extends {id: string},
     NewEntity = NewObj<Entity>,
     ReturnedEntity = Entity,
 >(
     table:string, nameField:string,
-    beforeCreate:Func<NewEntity, NewObj<Entity>> = transform,
+    beforeCreate:(obj: NewEntity) => NewObj<Entity> | Promise<NewObj<Entity>> = transform as any,
     afterLoad:Func<Entity, ReturnedEntity> = transform,
     afterCreate:Func<Entity, void> = () => {},
 ) => async (newObj: NewEntity): Promise<ReturnedEntity> => {
     try {
+        const filtered = FieldRegistry.filterCreate(table)(newObj);
+        const insertData = await beforeCreate(filtered);
         const [insertedObj] = await db
-            .insert(beforeCreate(newObj), "*")
+            .insert(insertData, "*")
             .into(table);
         afterCreate(insertedObj);
         return afterLoad(insertedObj);
@@ -107,29 +127,16 @@ export const loadByInsensitive = <T, R = T>(field:string, table:string, afterLoa
         .then(afterLoad);
 }
 
-const fieldRegistry:Index<string[]> = {};
-export const FieldRegistry = {
-    register: (entity: string, fields: string[]) => {
-        fieldRegistry[entity] = fieldRegistry[entity].concat(fields);
-    },
-    get: (entity: string): string[] => fieldRegistry[entity] || [],
-    filter: <Entity extends {id: string}>(entity: string) => (obj: Partial<Entity>): Partial<Entity> => {
-        return objFilter(
-            (_: any, key: string) => fieldRegistry[entity].includes(key)
-        )(obj) as Partial<Entity>;
-    }
-}
-
 export const update = <
     Entity extends {id: string},
     EntityUpdate = Partial<Entity>,
     ReturnedEntity = Entity,
 >(
     table:string,
-    beforeUpdate:Func<EntityUpdate, Partial<Entity>> = transform,
+    beforeUpdate:(obj: EntityUpdate) => Partial<Entity> | Promise<Partial<Entity>> = transform as any,
     afterLoad: Func<Entity, ReturnedEntity> = transform,
-) => (id:string, updated:EntityUpdate):Promise<ReturnedEntity> => {
-    const filtered = FieldRegistry.filter<Entity>(table)(updated as Partial<Entity>);
+) => async (id:string, updated:EntityUpdate):Promise<ReturnedEntity> => {
+    const filtered = FieldRegistry.filterUpdate<Entity>(table)(updated as Partial<Entity>);
 
     // Log a console warning if disallowed fields are removed
     const disallowedFields = Object.keys(updated as any).filter(key => !(filtered as any)[key]);
@@ -142,8 +149,10 @@ export const update = <
         return loadById<Entity, ReturnedEntity>(table, afterLoad)(id);
     }
 
+    const updateData = await beforeUpdate(filtered as EntityUpdate);
+
     return db
-        .update(beforeUpdate(filtered as EntityUpdate))
+        .update(updateData)
         .into(table)
         .where({ id })
         .then(() => loadById<Entity, ReturnedEntity>(table, afterLoad)(id));
