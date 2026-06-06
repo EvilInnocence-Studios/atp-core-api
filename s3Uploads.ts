@@ -1,13 +1,13 @@
-import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { getAppConfig } from "../../config";
-import { error500 } from "./express/errors";
+import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, ObjectCannedACL, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { fromEnv } from "@aws-sdk/credential-providers";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Setting } from "../common/setting/service";
+import { error500 } from "./express/errors";
 
 export declare interface IUploadOptions {
     failOnExist?: boolean;
     skipExisting?: boolean;
+    acl?: ObjectCannedACL;
 }
 
 export declare interface IFile {
@@ -25,14 +25,14 @@ export declare interface IFile {
 const getRegion = () => Setting.get("awsRegion");
 const getBucket = () => Setting.get("mediaBucket");
 
-export const getPresignedUploadUrl = async (Key:string) => {
+export const getPresignedUploadUrl = async (Key:string, acl:ObjectCannedACL = "public-read") => {
     const region = await getRegion();
     const Bucket = await getBucket();
     const client = new S3Client({ region, credentials: fromEnv() });
     const command = new PutObjectCommand({
         Bucket,
         Key,
-        ACL: "public-read",
+        ACL: acl,
     });
 
     return getSignedUrl(client, command, { expiresIn: 3600 });
@@ -74,7 +74,7 @@ export const uploadMedia = async (urlBase:string, file: any, options?:IUploadOpt
         Bucket,
         Key: key,
         Body: file.data,
-        ACL: "public-read",
+        ACL: options?.acl || "public-read",
         ContentType: file.mimetype,
     });
     await client.send(command);

@@ -28,11 +28,13 @@ export const getLoggedInUser = async (args:any[]):Promise<string | null> => {
     let userId:string | null = null;
     if (!token) {
         // If no token is found, load the public user
-        const publicUser = await getPublicUser();
-        userId = publicUser.id;
+        userId = (await getPublicUser()).id;
     } else {
-        // Get the user id from the login token
-        userId = (jwt.verify(token, secret()) as jwt.JwtPayload).userId;
+        // Get the user id from the auth token
+        const authToken = (jwt.verify(token, secret()) as {userId?:string, type?:string});
+        userId = authToken.type === "auth" && authToken.userId
+            ? authToken.userId
+            : (await getPublicUser()).id;
     }
     return userId;
 }

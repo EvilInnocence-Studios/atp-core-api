@@ -1,11 +1,13 @@
+import { secret } from "../../config";
 import "dotenv/config";
 import 'esm-hook';
-
 import express, { NextFunction, Request, Response } from "express";
 import fileUpload from 'express-fileupload';
+import jwt from "jsonwebtoken";
 import { types } from 'pg';
 import { apiConfigs } from "../../api.config";
 import { IApiConfig } from "./endpoints";
+import { error403 } from "./express/errors";
 
 const app = express();
 
@@ -17,6 +19,45 @@ app.use(fileUpload());
 
 // Make sure we can get the IP address
 app.set('trust proxy', true);
+
+// CloudFront bypass Protection middleware
+app.use((req, res, next) => {
+    // Let all local requests through
+    if(process.env.ENV === "local") {
+        next();
+        return;
+    }
+
+    // Let whitelisted paths through
+    if([
+        "/login",
+        "/profile",
+        "/user/resetPassword",
+        "/user/forgotLogin",
+    ].includes(req.path)) {
+        next();
+        return;
+    }
+
+    // Let admin users through via the uncached field in their JWT token
+    if(req.headers["authorization"]) {
+        const token = req.headers["authorization"].split(" ")[1];
+        const decoded = jwt.verify(token, secret()) as {uncached:boolean};
+        if(decoded.uncached) {
+            next();
+            return;
+        }
+    }
+
+    // Let CloudFront through
+    if(req.headers["x-forwarded-proto"] === "https") {
+        next();
+        return;
+    }
+
+    // Otherwise, deny
+    throw error403;
+});
 
 // Global CORS Middleware
 if (process.env.ENV === 'local') {

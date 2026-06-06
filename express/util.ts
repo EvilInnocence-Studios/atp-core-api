@@ -30,15 +30,18 @@ export const transform = <T, R>(obj:T) => obj as unknown as R;
 const fieldRegistry:Index<Index<string[]>> = {};
 export const FieldRegistry = {
     register: (entity: string, fields: {create: string[], update: string[]}) => {
-        fieldRegistry[entity].create = (fieldRegistry[entity].create || []).concat(fields.create);
-        fieldRegistry[entity].update = (fieldRegistry[entity].update || []).concat(fields.update);
+        if(typeof fieldRegistry[entity] === 'undefined') {fieldRegistry[entity] = {create: [], update: []};}
+        fieldRegistry[entity].create = fieldRegistry[entity].create.concat(fields.create);
+        fieldRegistry[entity].update = fieldRegistry[entity].update.concat(fields.update);
     },
     filterCreate: (entity: string) => (obj: any): any => {
+        console.log("Filtering create: ", entity, obj);
         return objFilter(
             (_: any, key: string) => fieldRegistry[entity].create.includes(key)
         )(obj);
     },
     filterUpdate: <Entity extends {id: string}>(entity: string) => (obj: Partial<Entity>): Partial<Entity> => {
+        console.log("Filtering update: ", entity, obj);
         return objFilter(
             (_: any, key: string) => fieldRegistry[entity].update.includes(key)
         )(obj) as Partial<Entity>;
