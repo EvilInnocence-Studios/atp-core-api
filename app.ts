@@ -42,10 +42,12 @@ app.use((req, res, next) => {
     // Let admin users through via the uncached field in their JWT token
     if(req.headers["authorization"]) {
         const token = req.headers["authorization"].split(" ")[1];
-        const decoded = jwt.verify(token, secret()) as {uncached:boolean};
-        if(decoded.uncached) {
-            next();
-            return;
+        if(token) {
+            const decoded = jwt.verify(token, secret()) as {uncached:boolean};
+            if(decoded.uncached) {
+                next();
+                return;
+            }
         }
     }
 
