@@ -93,6 +93,11 @@ types.setTypeParser(1700, function (val) {
     return parseFloat(val);
 });
 
+// Make sure date columns are returned as strings (YYYY-MM-DD), not JavaScript Dates
+types.setTypeParser(1082, function (val) {
+    return val;
+});
+
 // Recursive function to register routes
 function registerRoutes(config: IApiConfig, basePath = "") {
     Object.entries(config).forEach(([route, methodsOrSubRoutes]) => {
