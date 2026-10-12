@@ -39,6 +39,19 @@ app.use((req, res, next) => {
         return;
     }
 
+    // Let scheduled task invocations through when triggered directly by EventBridge or with secret
+    if (req.path === "/scheduled-tasks") {
+        const secretHeader = req.headers["x-scheduled-task-secret"];
+        const ebHeader = req.headers["x-eventbridge-source"];
+        if (
+            (process.env.SCHEDULED_TASK_SECRET && secretHeader === process.env.SCHEDULED_TASK_SECRET) ||
+            ebHeader === "aws.scheduler"
+        ) {
+            next();
+            return;
+        }
+    }
+
     // Let admin users through via the uncached field in their JWT token
     if(req.headers["authorization"]) {
         const token = req.headers["authorization"].split(" ")[1];
