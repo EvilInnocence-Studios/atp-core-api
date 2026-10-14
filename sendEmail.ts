@@ -1,6 +1,6 @@
 import { SendEmailCommand, SESClient } from "@aws-sdk/client-ses";
 import { fromEnv } from "@aws-sdk/credential-providers";
-import { getAppConfig } from "../../config";
+import { getAppConfig } from "./config";
 import { Setting } from "../common/setting/service";
 
 export const sendEmail = async (subject: string, body: string, to: string[]) => {

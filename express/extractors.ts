@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { at, defaultValue, memoizePromise, merge, pipe, pipeTo, prop, split } from "ts-functional";
-import { secret } from "../../../config";
+import { secret } from "../config";
 import { Params, Query } from "../../core-shared/express/types";
 import { User } from "../../uac/user/service";
 

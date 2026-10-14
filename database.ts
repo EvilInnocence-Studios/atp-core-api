@@ -1,5 +1,5 @@
 import knex, { Knex } from "knex";
-import { getDbConfig } from '../../config';
+import { getDbConfig } from './config';
 import { memoize } from "ts-functional";
 import readline from "node:readline/promises";
 import { config } from "dotenv";

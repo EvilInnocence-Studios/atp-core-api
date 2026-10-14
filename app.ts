@@ -1,4 +1,4 @@
-import { secret } from "../../config";
+import { secret } from "./config";
 import "dotenv/config";
 import 'esm-hook';
 import express, { NextFunction, Request, Response } from "express";
